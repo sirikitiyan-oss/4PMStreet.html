@@ -1,0 +1,2456 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>4PM Street — Shadow + Heat Memory</title>
+<style>
+  /* Token plan: chrome (sidebar/panels/text) is theme-aware; the plan canvas itself stays
+     fixed white "paper" in both themes, like a drafting table under a lamp — architectural
+     drawings read on white regardless of the surrounding UI shell. */
+  :root{
+    --ink:#17191a; --paper:#ffffff; --off:#faf9f6; --g100:#f1f1ee; --g200:#e4e3de;
+    --g300:#d2d1ca; --g500:#9b9a92; --g700:#56554e; --line:#222221; --accent:#1c4fa0;
+    --accent-soft:#e7edf7; --red:#c1352b; --green-ok:#1f6b45;
+    --canvas-paper:#ffffff; --canvas-ink:#1a1a19; --warn:#9a6200;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#eceae4; --paper:#1d1f1e; --off:#141514; --g100:#232523; --g200:#2d2f2c;
+      --g300:#3c3e3a; --g500:#8c8b83; --g700:#b9b7ad; --line:#48473f; --accent:#6ea1ea;
+      --accent-soft:#1c2a3d; --red:#e07468; --green-ok:#5bb98b; --warn:#e0a84a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#eceae4; --paper:#1d1f1e; --off:#141514; --g100:#232523; --g200:#2d2f2c;
+    --g300:#3c3e3a; --g500:#8c8b83; --g700:#b9b7ad; --line:#48473f; --accent:#6ea1ea;
+    --accent-soft:#1c2a3d; --red:#e07468; --green-ok:#5bb98b; --warn:#e0a84a;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  .app{font-family: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:var(--off); line-height:1.35;}
+  .app h1,.app h2,.app h3{margin:0; font-weight:600; letter-spacing:.02em;}
+  .app button{font-family:inherit;}
+  .topbar{display:flex; align-items:flex-end; justify-content:space-between; padding:14px 18px 10px; border-bottom:1.5px solid var(--line); gap:16px; flex-wrap:wrap;}
+  .title-block h1{font-size:19px; letter-spacing:.08em;}
+  .subtitle{margin:2px 0 0; font-size:11.5px; color:var(--g700);}
+  .sun-readout{font-size:11.5px; font-variant-numeric:tabular-nums; border:1px solid var(--g300); padding:5px 10px; background:var(--paper); white-space:nowrap;}
+  .main{display:flex; gap:14px; padding:14px 18px; align-items:flex-start; flex-wrap:wrap;}
+  .canvas-pane{flex:1 1 640px; min-width:360px;}
+  .canvas-toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;}
+  .btn-group{display:flex; border:1px solid var(--line);}
+  .toggle-btn{padding:6px 11px; font-size:10.5px; letter-spacing:.04em; background:var(--paper); border:none; border-right:1px solid var(--line); cursor:pointer; color:var(--g700);}
+  .toggle-btn:last-child{border-right:none;}
+  .toggle-btn.active{background:var(--ink); color:var(--paper);}
+  .legend{display:flex; align-items:center; gap:6px; font-size:9.5px; color:var(--g700);}
+  .legend .ramp{width:90px; height:9px; background:linear-gradient(90deg,#1c5fc2,#2e8b57,#e8c22d,#e0781f,#c1352b); border:1px solid var(--g300);}
+  .canvas-wrap{position:relative; border:1.5px solid var(--line); background:var(--canvas-paper);}
+  #plan{display:block; width:100%; height:auto; cursor:crosshair;}
+  .verdict-banner{position:absolute; top:10px; left:10px; right:10px; padding:9px 14px; font-size:13px; font-weight:600; letter-spacing:.03em; border:1.5px solid var(--canvas-ink); background:var(--canvas-paper); color:var(--canvas-ink); display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .verdict-banner.fail{border-color:var(--red); color:var(--red); background:#fdf1f0;}
+  .verdict-banner.ok{border-color:var(--green-ok); color:var(--green-ok); background:#f0f7f3;}
+  .verdict-reason{font-weight:400; font-size:11.5px; color:var(--canvas-ink);}
+  .time-controls{display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .btn{padding:7px 12px; font-size:11px; letter-spacing:.03em; background:var(--paper); border:1px solid var(--line); cursor:pointer; color:var(--ink);}
+  .btn:hover{background:var(--g100);}
+  .btn.primary{background:var(--ink); color:var(--paper);}
+  .btn.primary:hover{background:#000;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  #timeSlider{flex:1 1 160px; min-width:120px; accent-color:var(--ink);}
+  .time-label{font-size:12px; font-variant-numeric:tabular-nums; min-width:76px; text-align:right;}
+  .sidebar{flex:0 0 340px; width:340px; max-width:100%; display:flex; flex-direction:column; gap:10px;}
+  .panel{border:1px solid var(--g300); background:var(--paper); padding:11px 13px;}
+  .panel > h3{font-size:10.5px; letter-spacing:.09em; color:var(--g700); margin-bottom:9px; text-transform:uppercase;}
+  .addgrid{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
+  .addgrid .btn{font-size:10px; padding:8px 6px;}
+  .field{margin-bottom:8px;}
+  .field label{display:flex; justify-content:space-between; font-size:10.5px; color:var(--g700); margin-bottom:3px;}
+  .field input[type=range]{width:100%; accent-color:var(--ink);}
+  .field select{width:100%; padding:4px; font-size:11px; border:1px solid var(--g300); background:var(--paper);}
+  .selected-empty{font-size:11px; color:var(--g500); font-style:italic;}
+  .sel-title{font-size:12px; font-weight:600; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;}
+  .mini-del{font-size:10px; color:var(--red); background:none; border:1px solid var(--red); padding:2px 7px; cursor:pointer;}
+  .budget-bar-wrap{height:14px; border:1px solid var(--line); background:var(--g100); position:relative; margin:6px 0 4px;}
+  .budget-bar-fill{height:100%; background:var(--accent); transition:width .15s;}
+  .budget-bar-fill.over{background:var(--red);}
+  .budget-label{display:flex; justify-content:space-between; font-size:11px; font-variant-numeric:tabular-nums;}
+  .budget-note{font-size:9.5px; color:var(--g500); margin-top:4px;}
+  .metrics-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .metric-wide{grid-column:1 / -1;}
+  .metric{border:1px solid var(--g200); padding:8px 9px;}
+  .metric .m-label{font-size:9px; letter-spacing:.05em; color:var(--g700); text-transform:uppercase;}
+  .metric .m-value{font-size:18px; font-variant-numeric:tabular-nums; margin-top:2px;}
+  .metric.alert{border-color:var(--red);}
+  .metric.alert .m-value{color:var(--red);}
+  .propose-btn{width:100%; padding:10px; font-size:12px; letter-spacing:.04em; background:var(--accent); color:#fff; border:1px solid var(--accent); cursor:pointer;}
+  .propose-btn:hover{background:#163f82;}
+  .proposal-box{margin-top:9px; border:1px solid var(--line); padding:9px 10px; background:var(--accent-soft); display:none;}
+  .proposal-box.show{display:block;}
+  .proposal-box .ptitle{font-size:9.5px; letter-spacing:.08em; color:var(--accent); margin-bottom:5px;}
+  .proposal-box p{font-size:12px; margin:0 0 9px;}
+  .proposal-actions{display:flex; gap:7px;}
+  .proposal-actions .btn{flex:1; font-size:10.5px;}
+  .author-row{display:flex; align-items:center; justify-content:space-between; margin-top:10px; gap:8px; flex-wrap:wrap;}
+  .author-toggle{display:flex; border:1px solid var(--line);}
+  .author-toggle button{padding:5px 10px; font-size:10px; background:var(--paper); border:none; border-right:1px solid var(--line); cursor:pointer;}
+  .author-toggle button:last-child{border-right:none;}
+  .author-toggle button.active{background:var(--ink); color:var(--paper);}
+  details.panel{padding:0;}
+  details.panel > summary{padding:11px 13px; font-size:10.5px; letter-spacing:.09em; color:var(--g700); text-transform:uppercase; cursor:pointer; list-style:none;}
+  details.panel > summary::-webkit-details-marker{display:none;}
+  details.panel > summary::before{content:"▸ "; }
+  details.panel[open] > summary::before{content:"▾ "; }
+  details.panel .settings-body{padding:0 13px 13px;}
+  .settings-sub{font-size:9.5px; letter-spacing:.07em; color:var(--g500); margin:10px 0 6px; text-transform:uppercase;}
+  .settings-sub:first-child{margin-top:0;}
+  .history-pane{margin:0 18px 10px; border:1px solid var(--g300); background:var(--paper); padding:12px 14px;}
+  .history-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .history-head h2{font-size:11px; letter-spacing:.08em; color:var(--g700);}
+  .table-wrap{overflow-x:auto; max-height:220px; overflow-y:auto;}
+  table{width:100%; border-collapse:collapse; font-size:11px;}
+  th,td{padding:5px 8px; border-bottom:1px solid var(--g200); text-align:left; white-space:nowrap;}
+  th{font-size:9.5px; letter-spacing:.05em; color:var(--g700); text-transform:uppercase; position:sticky; top:0; background:var(--paper);}
+  td.pass{color:var(--green-ok); font-weight:600;}
+  td.refused{color:var(--red); font-weight:600;}
+  .empty-row td{color:var(--g500); font-style:italic;}
+  .disclaimer{margin:0 18px 18px; font-size:10px; color:var(--g500); border-top:1px solid var(--g200); padding-top:8px;}
+  .hint{font-size:9.5px; color:var(--g500); margin-top:3px;}
+  @media (max-width: 760px){ .sidebar{flex:1 1 100%; width:100%;} }
+
+  /* ===================== A3 · GROUNDING INSTRUMENT ===================== */
+  .statusbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:8px 18px; border-bottom:1px solid var(--g300); background:var(--paper);}
+  .statusbar .sb-label{font-size:9.5px; letter-spacing:.09em; color:var(--g500); text-transform:uppercase; margin-right:2px;}
+  .chip{display:inline-flex; align-items:center; gap:6px; font-size:10.5px; letter-spacing:.04em; padding:4px 9px; border:1px solid var(--g300); background:var(--off); color:var(--g700); line-height:1.25;}
+  .chip b{letter-spacing:.07em; color:var(--ink); font-weight:600;}
+  .chip.ok{border-color:var(--green-ok);} .chip.ok b{color:var(--green-ok);}
+  .chip.warn{border-color:var(--warn);} .chip.warn b{color:var(--warn);}
+  .chip.bad{border-color:var(--red);} .chip.bad b{color:var(--red);}
+
+  .grounding{margin:0 18px 14px; border:1px solid var(--g300); background:var(--paper);}
+  .g-head{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; padding:12px 14px 8px; border-bottom:1px solid var(--g200);}
+  .g-head h2{font-size:11px; letter-spacing:.08em; color:var(--g700);}
+  .g-head p{margin:3px 0 0; font-size:10.5px; color:var(--g500); max-width:760px;}
+  .g-tabs{margin:10px 14px 0;} .g-tabs .toggle-btn{padding:7px 14px;}
+  .g-body{padding:12px 14px 14px;}
+  .g-tab[hidden]{display:none!important;}
+  .g-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:12px; align-items:start;}
+  .g-grid.wide-left{grid-template-columns:minmax(340px,5fr) minmax(340px,6fr);}
+  .g-panel{border:1px solid var(--g200); padding:11px 12px; background:var(--paper); min-width:0;}
+  .g-panel + .g-panel{margin-top:0;}
+  .g-panel > h3{font-size:10.5px; letter-spacing:.09em; color:var(--g700); margin-bottom:8px; text-transform:uppercase;}
+  .g-stack{display:flex; flex-direction:column; gap:12px; min-width:0;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+  .g-input{width:100%; padding:5px 6px; font:inherit; font-size:11.5px; border:1px solid var(--g300); background:var(--paper); color:var(--ink); min-width:0;}
+  .g-input:focus{outline:2px solid var(--accent); outline-offset:-1px;}
+  textarea.g-input{resize:vertical; min-height:42px;}
+  .g-note{font-size:10.5px; color:var(--g700); line-height:1.45; margin:6px 0 0;}
+  .g-note.small{font-size:9.5px; color:var(--g500);}
+  .g-msg{font-size:11px; margin:8px 0 0; min-height:14px;}
+  .g-msg.err{color:var(--red);} .g-msg.okmsg{color:var(--green-ok);}
+  .btn-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+  .btn.danger{border-color:var(--red); color:var(--red);} .btn.danger:hover{background:var(--g100);}
+  .btn.armed{background:var(--red); color:#fff; border-color:var(--red);}
+  .tbl-wrap{overflow-x:auto; max-height:260px; overflow-y:auto; border:1px solid var(--g200);}
+  .tbl-wrap table{font-size:10.5px;}
+  .g-panel th{text-transform:none; letter-spacing:.02em; font-size:10px;}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums;}
+  td.pass{color:var(--green-ok); font-weight:600;} td.fail{color:var(--red); font-weight:600;} td.na{color:var(--warn); font-weight:600;}
+  .mini-x{font-size:10px; color:var(--red); background:none; border:1px solid var(--red); padding:1px 6px; cursor:pointer;}
+  .kv{display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:11px; font-variant-numeric:tabular-nums;}
+  .kv dt{color:var(--g700);} .kv dd{margin:0;}
+  .callout{border:1px solid var(--line); padding:8px 10px; font-size:11.5px; line-height:1.45; background:var(--off);}
+  .callout.ok{border-color:var(--green-ok); background:var(--off);} .callout.ok .ct{color:var(--green-ok);}
+  .callout.bad{border-color:var(--red);} .callout.bad .ct{color:var(--red);}
+  .callout.warn{border-color:var(--warn);} .callout.warn .ct{color:var(--warn);}
+  .callout .ct{font-weight:600; letter-spacing:.05em; font-size:11px; margin-bottom:3px; display:block;}
+  .callout ul{margin:4px 0 0 16px; padding:0;}
+  .eqn{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; padding:6px 8px; border:1px solid var(--g300); background:var(--off); overflow-x:auto; white-space:nowrap;}
+  .loop{display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px;}
+  .loop .step{flex:1 1 130px; border:1px solid var(--g300); padding:6px 8px; font-size:10.5px; color:var(--g700); background:var(--off); min-width:120px;}
+  .loop .step b{display:block; font-size:9.5px; letter-spacing:.08em; color:var(--g500); margin-bottom:2px;}
+  .loop .step.done{border-color:var(--green-ok);} .loop .step.done b{color:var(--green-ok);}
+  .loop .step.fail{border-color:var(--red);} .loop .step.fail b{color:var(--red);}
+  .rgrid{display:grid; grid-template-columns:34px 1fr 1fr; gap:4px 8px; align-items:center; font-size:10.5px; color:var(--g700);}
+  .rgrid .rh{font-size:9.5px; letter-spacing:.06em; color:var(--g500); text-transform:uppercase;}
+  .chart-box{border:1px solid var(--g200); background:var(--paper);}
+  .chart-box svg{display:block; width:100%; height:auto;}
+  .legend-row{display:flex; gap:12px; flex-wrap:wrap; font-size:10px; color:var(--g700); margin:6px 0 0;}
+  .legend-row i{display:inline-block; width:18px; height:0; border-top:2px solid; vertical-align:middle; margin-right:5px;}
+  details.rules{margin-top:8px; font-size:10.5px; color:var(--g700);} details.rules summary{cursor:pointer; letter-spacing:.05em;}
+  details.rules ul{margin:6px 0 0 16px; padding:0; line-height:1.5;}
+  .tau-readout{font-size:10.5px; color:var(--g700); margin:-2px 0 8px; font-variant-numeric:tabular-nums;}
+  .time-label{min-width:104px;}
+  @media (max-width: 760px){ .g-grid.wide-left{grid-template-columns:1fr;} .row3{grid-template-columns:1fr 1fr;} }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="title-block">
+      <h1>4PM STREET</h1>
+      <p class="subtitle">Shadow + Heat Memory — a continuous pedestrian route, Austin TX. Propose shade → simulate → the rule-based model can refuse. A3: grounded in field measurements.</p>
+    </div>
+    <div class="sun-readout" id="sunReadout">SOLAR ALT —° · AZ —°</div>
+  </header>
+  <div class="statusbar" id="statusbar" role="status" aria-label="Instrument status">
+    <span class="sb-label">Instrument status</span>
+    <span class="chip" id="chipMath"></span>
+    <span class="chip" id="chipThermal"></span>
+    <span class="chip" id="chipValid"></span>
+  </div>
+
+  <div class="main">
+    <div class="canvas-pane">
+      <div class="canvas-toolbar">
+        <div class="btn-group" id="displayModeGroup">
+          <button class="toggle-btn active" data-mode="shadow">CURRENT SHADOW</button>
+          <button class="toggle-btn" data-mode="exposure">CUMULATIVE EXPOSURE</button>
+          <button class="toggle-btn" data-mode="heat">SURFACE HEAT</button>
+        </div>
+        <div class="legend"><span>LOW</span><span class="ramp"></span><span>HIGH</span></div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="plan" width="1080" height="576"></canvas>
+        <div class="verdict-banner" id="verdictBanner" hidden></div>
+      </div>
+      <div class="time-controls">
+        <button id="btnRun" class="btn primary">▶ RUN AFTERNOON</button>
+        <button id="btnPause" class="btn">PAUSE</button>
+        <button id="btnReset" class="btn">RESET</button>
+        <input type="range" id="timeSlider" min="0" max="300" step="5" value="0">
+        <span id="timeLabel" class="time-label">12:00 PM</span>
+      </div>
+      <p class="hint">Drag the slider or press RUN AFTERNOON to watch shadows move and the route accumulate sun exposure and surface heat from 12:00–5:00 PM. Afternoon shadows sweep toward the building side of the route — shade planted a few meters south of the walking line often lands on it later than shade planted directly on top.</p>
+    </div>
+
+    <aside class="sidebar">
+      <div class="panel">
+        <h3>Add Elements</h3>
+        <div class="addgrid">
+          <button class="btn" data-place="small">+ ADD SMALL TREE</button>
+          <button class="btn" data-place="medium">+ ADD MEDIUM TREE</button>
+          <button class="btn" data-place="large">+ ADD LARGE TREE</button>
+          <button class="btn" data-place="canopy">+ ADD CANOPY</button>
+        </div>
+        <p class="hint" id="placeHint">Click a button, then click the plan to place it. Drag placed elements to move them; click to select.</p>
+      </div>
+
+      <div class="panel" id="selectedPanel">
+        <h3>Selected Element</h3>
+        <div id="selectedBody"><p class="selected-empty">Nothing selected. Click a tree or canopy on the plan.</p></div>
+      </div>
+
+      <div class="panel">
+        <h3>Shade Budget</h3>
+        <div class="budget-label"><span id="budgetUsed">0</span><span>/ <span id="budgetTotal">100</span></span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar-fill" id="budgetFill" style="width:0%"></div></div>
+        <p class="budget-note">Shade Points are a comparative design constraint, not a construction-cost estimate.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Outputs</h3>
+        <div class="metrics-grid">
+          <div class="metric" id="metricExposure"><div class="m-label">Exposure Minutes</div><div class="m-value">—</div></div>
+          <div class="metric" id="metricPeak"><div class="m-label">Peak Surface Temp</div><div class="m-value">—</div></div>
+          <div class="metric" id="metricCool"><div class="m-label">Cool Route %</div><div class="m-value">—</div></div>
+          <div class="metric" id="metricBudget"><div class="m-label">Shade Used</div><div class="m-value">0/100</div></div>
+          <div class="metric metric-wide" id="metricHotGap"><div class="m-label">Longest Hot Gap</div><div class="m-value">—</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <button class="propose-btn" id="btnSuggest">✦ SUGGEST NEXT MOVE</button>
+        <div class="proposal-box" id="proposalBox">
+          <div class="ptitle">MODEL PROPOSAL</div>
+          <p id="proposalText"></p>
+          <div class="proposal-actions">
+            <button class="btn primary" id="btnAccept">ACCEPT MOVE</button>
+            <button class="btn" id="btnReject">REJECT MOVE</button>
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label><span>MOVE (what did you change?)</span></label>
+          <input type="text" id="moveDescription" placeholder="e.g. &quot;Moved medium tree west&quot; — auto-filled for accepted model proposals" style="width:100%; padding:6px 7px; font-size:11.5px; border:1px solid var(--g300); background:var(--paper); color:var(--ink);">
+        </div>
+        <div class="author-row">
+          <div>
+            <div class="hint" style="margin:0 0 3px;">PROPOSAL AUTHOR:</div>
+            <div class="author-toggle" id="authorToggle">
+              <button data-author="HUMAN" class="active">HUMAN</button>
+              <button data-author="MODEL">MODEL</button>
+            </div>
+          </div>
+          <button class="btn primary" id="btnScore">SCORE ROUND</button>
+        </div>
+      </div>
+
+      <details class="panel" open>
+        <summary>Settings</summary>
+        <div class="settings-body">
+          <div class="settings-sub">Time / Environment</div>
+          <div class="field">
+            <label><span>Date / Season</span></label>
+            <select id="dateSelect">
+              <option value="2026-06-21">Jun 21 — Summer Solstice</option>
+              <option value="2026-08-15" selected>Aug 15 — Late Summer</option>
+              <option value="2026-10-02">Oct 2 — Fall</option>
+              <option value="2026-12-21">Dec 21 — Winter Solstice</option>
+            <option value="custom">Custom date (below)</option>
+            </select>
+          </div>
+          <div class="field"><label><span>Or any date (2007 onward)</span></label><input type="date" id="customDate" class="g-input" min="2007-01-01" max="2099-12-31"></div>
+          <p class="hint" style="margin-bottom:10px;">Austin, TX · 30.27°N, 97.74°W · times are the local clock (CDT UTC−5 in summer, CST UTC−6 in winter). 12:00–5:00 PM runs on that clock.</p>
+
+          <div class="settings-sub">Thermal</div>
+          <div class="field"><label><span>Surface Albedo</span><span id="valAlbedo">0.12</span></label><input type="range" id="setAlbedo" min="0.05" max="0.6" step="0.01" value="0.12"></div>
+          <div class="field"><label><span>Heat Storage (thermal mass)</span><span id="valCap">1.0</span></label><input type="range" id="setCap" min="0.5" max="2.2" step="0.05" value="1.0"></div>
+          <div class="field"><label><span>Cooling Rate</span><span id="valCool">0.45</span></label><input type="range" id="setCooling" min="0.1" max="6" step="0.01" value="0.45"></div>
+          <div class="tau-readout" id="tauReadout"></div>
+          <div class="field"><label><span>Neighbor Diffusion</span><span id="valDiff">0.15</span></label><input type="range" id="setDiffusion" min="0" max="0.5" step="0.01" value="0.15"></div>
+          <div class="field"><label><span>Sun-lit Heating Excess (°F above air, zenith sun)</span><span id="valSunExcess">38</span></label><input type="range" id="setSunExcess" min="10" max="60" step="0.1" value="38"></div>
+          <div class="field"><label><span>Air Temperature (°F)</span><span id="valAmbient">96</span></label><input type="range" id="setAmbient" min="60" max="115" step="1" value="96"></div>
+          <div class="field"><label><span>Noon Surface Offset (°F above air at 12:00)</span><span id="valInit">10</span></label><input type="range" id="setInit" min="0" max="40" step="1" value="10"></div>
+          <div class="field"><label><span>Temperature Threshold (°F)</span><span id="valThresh">120</span></label><input type="range" id="setThreshold" min="95" max="150" step="1" value="120"></div>
+
+          <div class="settings-sub">Constraint</div>
+          <div class="field"><label><span>Shade Budget (points)</span><span id="valBudgetCap">100</span></label><input type="range" id="setBudgetCap" min="50" max="160" step="5" value="100"></div>
+        </div>
+      </details>
+    </aside>
+  </div>
+
+  <section class="grounding" id="grounding">
+    <div class="g-head">
+      <div>
+        <h2>GROUNDING INSTRUMENT — FIELD ROUTE · STAGE 1</h2>
+        <p>Three separate questions: (1) is the shadow geometry mathematically right, (2) what did you actually measure on the sidewalk, (3) how fast does that pavement shed heat. Each is reported separately; none of them proves the temperature predictions are accurate.</p>
+      </div>
+    </div>
+    <div class="btn-group g-tabs" id="gTabs">
+      <button class="toggle-btn active" data-tab="physics">1 · PHYSICS CHECK</button>
+      <button class="toggle-btn" data-tab="field">2 · FIELD CALIBRATION</button>
+      <button class="toggle-btn" data-tab="cooling">3 · COOLING CURVE</button>
+    </div>
+    <div class="g-body">
+
+      <!-- ============ PHYSICS CHECK ============ -->
+      <div class="g-tab" id="tab-physics">
+        <div class="g-grid">
+          <div class="g-panel">
+            <h3>Physics check — known-result test</h3>
+            <div class="row2">
+              <div class="field"><label><span>Date</span></label><input type="date" id="phDate" class="g-input" min="2007-01-01" max="2099-12-31"></div>
+              <div class="field"><label><span>Local clock time (Austin)</span></label><input type="time" id="phTime" class="g-input" value="16:00"></div>
+            </div>
+            <div class="field"><label><span>Tree to check</span></label><select id="phTree" class="g-input"></select></div>
+            <div class="field"><label><span>Extra heights to test (m, comma-separated)</span></label><input type="text" id="phHeights" class="g-input" value="3, 6, 9, 13, 18"></div>
+            <div id="phTimeInfo" class="g-note"></div>
+            <p class="g-note small">Selecting a tree on the plan selects it here. The date follows the Settings date.</p>
+          </div>
+          <div class="g-panel">
+            <h3>Sun position — two independent algorithms</h3>
+            <div id="phSun"></div>
+            <div class="field" style="margin-top:10px;">
+              <label><span>Optional: compare with NOAA / USNO calculator for this date, time and Austin</span></label>
+              <div class="row2">
+                <input type="number" step="0.01" id="phRefAlt" class="g-input" placeholder="altitude ° (above horizon)">
+                <input type="number" step="0.01" id="phRefAz" class="g-input" placeholder="azimuth ° (from north)">
+              </div>
+            </div>
+            <div id="phRef" class="g-note"></div>
+          </div>
+        </div>
+
+        <div class="g-panel" style="margin-top:12px;">
+          <h3>Shadow length — L = h / tan(α) against the simulation</h3>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Tree</th><th class="num">h (m)</th><th class="num">α (°)</th><th class="num">L = h/tan α (m)</th><th class="num">Simulated (m)</th><th class="num">Δ (m)</th><th class="num">Δ (%)</th><th class="num">Tolerance (m)</th><th>Result</th></tr></thead>
+            <tbody id="phRows"></tbody>
+          </table></div>
+          <div id="phDir" class="g-note"></div>
+          <div id="phSummary" style="margin-top:8px;"></div>
+          <details class="rules" open>
+            <summary>HOW THIS IS CALCULATED</summary>
+            <ul>
+              <li>A point at height <b>h</b> on flat ground casts a shadow of length <b>L = h / tan(α)</b>, where α is the sun’s altitude. The shadow points away from the sun, toward azimuth + 180°.</li>
+              <li><b>Theory column</b> is computed from that formula using the sun position above. <b>Simulated column</b> is not: the check places an isolated copy of the tree in the simulation, asks the simulation’s own shaded-or-not function about every point along the shadow axis (every 0.02 m), takes the far edge of the shadow, and subtracts the crown radius (the crown is a disk of radius Ø/2 swept from trunk to tip).</li>
+              <li><b>Direction</b> is tested by scanning a circle of radius L around the trunk every 0.25° and averaging the shaded angles.</li>
+              <li><b>Tolerance:</b> PASS if |Δ| ≤ max(0.10 m, 1 % of L). Direction PASS if within 1.0°. The two sun algorithms must agree within <span id="phTolText"></span>.</li>
+              <li><b>What a PASS means:</b> the geometry code reproduces the textbook formula on a flat site. It does <b>not</b> show that the modelled tree resembles a real tree, or that pavement temperatures are correct. That is the job of field data, below.</li>
+            </ul>
+          </details>
+          <details class="rules">
+            <summary>CORRECTION LOG — what the audit changed (computed live for the date and time above)</summary>
+            <div id="phLegacy" class="g-note"></div>
+          </details>
+        </div>
+      </div>
+
+      <!-- ============ FIELD CALIBRATION ============ -->
+      <div class="g-tab" id="tab-field" hidden>
+        <div class="g-grid wide-left">
+          <div class="g-panel">
+            <h3>Field calibration — enter one real measurement</h3>
+            <div class="row2">
+              <div class="field"><label><span>Date</span></label><input type="date" id="fDate" class="g-input" min="2007-01-01" max="2099-12-31"></div>
+              <div class="field"><label><span>Local clock time</span></label><input type="time" id="fTime" class="g-input"></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label><span>Point ID / location</span></label><input type="text" id="fPoint" class="g-input" maxlength="40" placeholder="e.g. P1 – west of tree"></div>
+              <div class="field"><label><span>Surface type</span></label>
+                <select id="fSurface" class="g-input"><option value="asphalt">Asphalt</option><option value="concrete">Concrete</option><option value="brick">Brick / pavers</option><option value="stone">Stone / granite</option><option value="other">Other</option></select></div>
+            </div>
+            <div class="row3">
+              <div class="field"><label><span>Condition</span></label>
+                <select id="fCond" class="g-input"><option value="sun">Sun</option><option value="shade">Shade</option><option value="partial">Partial / transition</option></select></div>
+              <div class="field"><label><span>Surface °F</span></label><input type="number" step="0.1" id="fTemp" class="g-input" placeholder="required"></div>
+              <div class="field"><label><span>Air °F (optional)</span></label><input type="number" step="0.1" id="fAir" class="g-input"></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label><span>Object height m (optional)</span></label><input type="number" step="0.01" min="0" id="fObjH" class="g-input" placeholder="for a shadow check"></div>
+              <div class="field"><label><span>Shadow length m (optional)</span></label><input type="number" step="0.01" min="0" id="fShadowL" class="g-input" placeholder="measured on the ground"></div>
+            </div>
+            <div class="field"><label><span>Notes (optional)</span></label><textarea id="fNotes" class="g-input" maxlength="300" placeholder="instrument, emissivity setting, wind, cloud, anything unusual"></textarea></div>
+            <div class="btn-row"><button class="btn primary" id="fAdd">ADD MEASUREMENT</button></div>
+            <div id="fMsg" class="g-msg"></div>
+            <p class="g-note small">Surface temperature is not human thermal comfort. Infrared thermometers are commonly good to about ±2 °F at best, and the reading depends on the emissivity of the surface and on where you point it. Record your instrument in the notes. Nothing is pre-filled except today’s date, and no demonstration data is stored.</p>
+          </div>
+
+          <div class="g-panel">
+            <h3>Stored measurements <span id="fCount" style="color:var(--g500); font-weight:400;"></span></h3>
+            <div class="tbl-wrap" style="max-height:300px;"><table>
+              <thead><tr><th>Date</th><th>Time</th><th>Point</th><th>Surface</th><th>Cond.</th><th class="num">Surf °F</th><th class="num">Air °F</th><th class="num">Sun α°</th><th>Shadow check</th><th></th></tr></thead>
+              <tbody id="fBody"></tbody>
+            </table></div>
+            <div class="btn-row">
+              <button class="btn" id="fExport">EXPORT CSV</button>
+              <button class="btn" id="fTemplate">DOWNLOAD CSV TEMPLATE</button>
+              <button class="btn" id="fUploadBtn">UPLOAD CSV…</button>
+              <input type="file" id="fUpload" accept=".csv,text/csv,text/plain" hidden>
+              <button class="btn danger" id="fClear">DELETE ALL</button>
+            </div>
+            <div id="fImportMsg" class="g-note"></div>
+            <p class="g-note small" id="fStorageNote"></p>
+            <details class="rules">
+              <summary>WHAT TO COLLECT (field protocol, short form)</summary>
+              <ul>
+                <li>Use the same instrument and the same emissivity setting for every reading; write it in the notes.</li>
+                <li>Point the sensor straight down at bare pavement, from the same height, away from paint, cracks and your own shadow.</li>
+                <li>Log the <b>local clock time</b> to the minute. The app converts it to the correct UTC offset (CDT or CST) for the date.</li>
+                <li>For the shadow check: stand a pole or measure a post of known height, then tape the shadow length on level ground at the logged time.</li>
+                <li>Cooling curves have their own tab: one location, one reading every five minutes after shade arrives.</li>
+              </ul>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ COOLING CURVE ============ -->
+      <div class="g-tab" id="tab-cooling" hidden>
+        <div class="loop" id="cLoop"></div>
+        <div class="g-grid wide-left">
+          <div class="g-stack">
+            <div class="g-panel">
+              <h3>Cooling curve — one location, readings every five minutes</h3>
+              <div class="row2">
+                <div class="field"><label><span>Date</span></label><input type="date" id="cDate" class="g-input" min="2007-01-01" max="2099-12-31"></div>
+                <div class="field"><label><span>Point ID / location</span></label><input type="text" id="cPoint" class="g-input" maxlength="40" placeholder="e.g. P1"></div>
+              </div>
+              <div class="row3">
+                <div class="field"><label><span>Surface</span></label>
+                  <select id="cSurface" class="g-input"><option value="asphalt">Asphalt</option><option value="concrete">Concrete</option><option value="brick">Brick / pavers</option><option value="stone">Stone / granite</option><option value="other">Other</option></select></div>
+                <div class="field"><label><span>Air °F (required)</span></label><input type="number" step="0.1" id="cAir" class="g-input"></div>
+                <div class="field"><label><span>Thermometer ± °F</span></label><input type="number" step="0.1" min="0.2" max="10" id="cSigma" class="g-input" value="2"></div>
+              </div>
+              <div class="field"><label><span>Notes (optional)</span></label><input type="text" id="cNotes" class="g-input" maxlength="300" placeholder="when shade arrived, instrument, wind"></div>
+              <div class="settings-sub">Readings after shade arrives (t = 0)</div>
+              <div class="rgrid" id="cGrid"></div>
+              <div class="btn-row">
+                <button class="btn" id="cAddRow">+ ADD ROW</button>
+                <button class="btn" id="cRemoveRow">– REMOVE LAST ROW</button>
+                <button class="btn" id="cCsvBtn">LOAD READINGS FROM CSV…</button>
+                <input type="file" id="cCsv" accept=".csv,text/csv,text/plain" hidden>
+              </div>
+              <p class="g-note small">CSV for readings: two columns, <code>minutes</code> and <code>surface_temp_f</code>, header row required.</p>
+              <div class="btn-row">
+                <button class="btn primary" id="cSave">SAVE SESSION</button>
+                <button class="btn" id="cNew">NEW SESSION</button>
+                <select id="cSaved" class="g-input" style="width:auto; flex:1 1 150px;"></select>
+                <button class="btn" id="cLoad">LOAD</button>
+                <button class="btn danger" id="cDelete">DELETE</button>
+              </div>
+              <div id="cMsg" class="g-msg"></div>
+            </div>
+          </div>
+
+          <div class="g-stack">
+            <div class="g-panel">
+              <h3>Measured curve, fit and simulation</h3>
+              <div class="chart-box" id="cChart"></div>
+              <div class="legend-row" id="cLegend"></div>
+            </div>
+            <div class="g-panel">
+              <h3>Fit verdict</h3>
+              <div id="cVerdict"></div>
+              <div id="cEquation" style="margin-top:8px;"></div>
+              <div id="cStats" style="margin-top:8px;"></div>
+              <div id="cCompare" style="margin-top:8px;"></div>
+              <div class="btn-row">
+                <button class="btn primary" id="cApply" disabled>APPLY CALIBRATION</button>
+                <button class="btn" id="cRevert">REVERT TO DEFAULT</button>
+              </div>
+              <div id="cActive" style="margin-top:8px;"></div>
+              <details class="rules" open>
+                <summary>MODEL, ASSUMPTIONS AND ACCEPTANCE RULES</summary>
+                <ul id="cRules"></ul>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="history-pane">
+    <div class="history-head">
+      <h2>ROUND HISTORY — DISCOVERY EXPERIMENT</h2>
+      <button class="btn" id="btnExport">EXPORT CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table id="historyTable">
+        <thead><tr><th>Round</th><th>Author</th><th>Move</th><th>Exposure Min</th><th>Peak °F</th><th>Cool Route %</th><th>Longest Hot Gap</th><th>Shade Used</th><th>Result</th></tr></thead>
+        <tbody id="historyBody"><tr class="empty-row"><td colspan="9">No rounds scored yet. Place shade, run the afternoon, then SCORE ROUND.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="disclaimer">4PM Street is a simplified design simulation. Until you apply field data, thermal and vegetation parameters are adjustable assumptions, not measurements. Even after calibration, a result is a model prediction of <b>pavement surface temperature</b> on one surface type under one set of conditions, with the measurement error of your thermometer; it is not human thermal comfort, and the proposal button is a rule-based heuristic, not an AI model. The shadow check verifies geometry only; it does not validate temperature predictions.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ====================== CONFIG ====================== */
+const SCALE = 9;              // px per meter
+const PLAN_W = 120, PLAN_H = 64; // meters
+const CELL = 2;                // grid cell size, meters
+const LAT = 30.27, LON = -97.74;
+const MIN_CLEARANCE = 2.4;     // meters, required pedestrian clearance under canopy
+const ROUTE_Y = 36;
+const ROUTE_X0 = 3, ROUTE_X1 = 117;
+const ROUTE_LEN = ROUTE_X1 - ROUTE_X0;
+const SAMPLE_SPACING = 1;      // meters
+const STEP_MIN = 10;           // simulation step, minutes
+const TYPE_DEFAULTS = {
+  small:  {label:"Small Tree",  diameter:3.5, dMin:2.5, dMax:5,  height:6,  hMin:4,  hMax:9,  density:0.45, cost:10},
+  medium: {label:"Medium Tree", diameter:6,   dMin:4,   dMax:8,  height:9,  hMin:7,  hMax:13, density:0.65, cost:18},
+  large:  {label:"Large Tree",  diameter:9,   dMin:7,   dMax:12, height:13, hMin:11, hMax:18, density:0.85, cost:30},
+};
+const CANOPY_COST_PER_M2 = 1.2;
+const DEFAULT_THERMAL = {albedo:0.12, heatCapacity:1.0, coolingRate:0.45, diffusionRate:0.15, ambient:96, sunExcess:38, initOffset:10};
+
+// Buildings: north row (context only) + south row (the design problem)
+const BUILDINGS = [
+  {x0:0,  y0:0,  x1:38, y1:15, h:15, side:"n"},
+  {x0:42, y0:0,  x1:80, y1:15, h:15, side:"n"},
+  {x0:84, y0:0,  x1:120,y1:15, h:15, side:"n"},
+  {x0:0,  y0:40, x1:25, y1:58, h:19, side:"s"},
+  {x0:30, y0:48, x1:78, y1:58, h:7,  side:"s"},
+  {x0:82, y0:41, x1:120,y1:58, h:22, side:"s"},
+];
+
+/* ====================== STATE ====================== */
+let idCounter = 1;
+const typeCounters = {small:0, medium:0, large:0, canopy:0};
+
+const state = {
+  dateStr: "2026-08-15",
+  timeMinutes: 0,     // 0..300, 0 = 12:00
+  running: false,
+  runTimer: null,
+  displayMode: "shadow",
+  elements: [],
+  selectedId: null,
+  placingType: null,
+  dragging: null,     // {id, dx, dy} or {id, resizing:true}
+  budgetCap: 100,
+  threshold: 120,
+  thermal: Object.assign({}, DEFAULT_THERMAL),
+  grid: null,
+  routeSamples: null,
+  currentShapes: [],
+  lastResult: null,
+  rounds: [],
+  roundNum: 0,
+  authorMode: "HUMAN",
+  proposal: null,
+  pulsePhase: 0,
+};
+
+function makeExisting(x,y){
+  return {id:"ex"+(idCounter++), kind:"tree", type:"existing", name:"Existing Tree",
+    x,y, diameter:5, height:7, density:0.5, cost:0, locked:true};
+}
+function makeTree(type,x,y){
+  const d = TYPE_DEFAULTS[type];
+  typeCounters[type]++;
+  const n = String(typeCounters[type]).padStart(2,"0");
+  return {id:"t"+(idCounter++), kind:"tree", type, name:`${d.label} ${n}`,
+    x,y, diameter:d.diameter, height:d.height, density:d.density, cost:d.cost, locked:false};
+}
+function makeCanopy(x,y,w,d,h){
+  typeCounters.canopy++;
+  const n = String(typeCounters.canopy).padStart(2,"0");
+  const area = (w||4)*(d||3);
+  return {id:"c"+(idCounter++), kind:"canopy", type:"canopy", name:`Canopy ${n}`,
+    x:x-(w||4)/2, y:y-(d||3)/2, w:w||4, d:d||3, height:h||3.2,
+    cost: Math.round(area*CANOPY_COST_PER_M2), locked:false};
+}
+
+function initElements(){
+  state.elements = [makeExisting(15,36), makeExisting(102,36)];
+}
+
+/* ====================== TIME + SOLAR POSITION ====================== */
+// A3 Stage 1 audit corrections (all three were wrong in the original):
+//  1. The original used a fixed UTC−6 all year. Austin is on CDT (UTC−5) from the second Sunday
+//     of March to the first Sunday of November, so for Jun/Aug/Oct dates every "12:00 PM" was
+//     really 1:00 PM and the simulated sun was one hour late (up to ~12° too low at 4 PM).
+//  2. Day-of-year was taken from the browser’s local Date, which is off by one day on DST dates
+//     in any DST-observing time zone (the answer depended on where the viewer was sitting).
+//  3. The Spencer/NOAA Fourier series is only good to ~0.4° declination at the 2026 equinoxes
+//     because it is indexed by calendar day, not by the actual instant. The primary solar
+//     position is now the Astronomical Almanac low-precision algorithm, computed from the true
+//     UTC instant. The old series is kept only as an independent cross-check.
+const RAD = Math.PI/180, DEG = 180/Math.PI;
+const LEGACY_TZ = -6;       // the original fixed offset, kept only for the audit comparison
+const SUN_FLOOR_DEG = 2;    // the shadow model does not draw shadows when the sun is this low
+const MAX_SHADOW_M = 200;   // the shadow model caps shadow length here
+
+function parseDateStr(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s||"").trim());
+  if (!m) return null;
+  const y = +m[1], mo = +m[2], d = +m[3];
+  const t = new Date(Date.UTC(y, mo-1, d));
+  if (t.getUTCFullYear()!==y || t.getUTCMonth()!==mo-1 || t.getUTCDate()!==d) return null;
+  return {y, m:mo, d};
+}
+function nthSundayOfMonth(y, monthIdx, n){
+  const dow = new Date(Date.UTC(y, monthIdx, 1)).getUTCDay();   // 0 = Sunday
+  return 1 + ((7-dow)%7) + (n-1)*7;
+}
+// US rule in force since 2007: DST starts 02:00 on the 2nd Sunday of March, ends 02:00 on the 1st Sunday of November.
+function austinUtcOffset(y, m, d, clockMin){
+  const wall  = Date.UTC(y, m-1, d)/60000 + clockMin;
+  const start = Date.UTC(y, 2,  nthSundayOfMonth(y, 2, 2))/60000 + 120;
+  const end   = Date.UTC(y, 10, nthSundayOfMonth(y, 10, 1))/60000 + 120;
+  return (wall >= start && wall < end) ? -5 : -6;
+}
+function zoneLabel(off){ return off === -5 ? "CDT" : "CST"; }
+// Independent check of the rule above against the browser’s own time-zone database (null if unavailable).
+function intlOffsetCheck(y, m, d, clockMin){
+  try{
+    const fmt = new Intl.DateTimeFormat("en-US", {timeZone:"America/Chicago", hourCycle:"h23", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"});
+    const wall = Date.UTC(y, m-1, d) + clockMin*60000;
+    const offsetAt = ms=>{
+      const p = {}; fmt.formatToParts(new Date(ms)).forEach(x=>{ p[x.type] = x.value; });
+      const w = Date.UTC(+p.year, +p.month-1, +p.day, +p.hour, +p.minute);
+      return Math.round((w-ms)/3600000);
+    };
+    for (const off of [-5,-6]){ if (offsetAt(wall - off*3600000) === off) return off; }
+    return null;
+  } catch(e){ return null; }
+}
+function clockToUtcMs(dateStr, clockMin){
+  const p = parseDateStr(dateStr);
+  const off = austinUtcOffset(p.y, p.m, p.d, clockMin);
+  return Date.UTC(p.y, p.m-1, p.d) + (clockMin - off*60)*60000;
+}
+// Astronomical Almanac low-precision solar position, from the true UTC instant. Geometric (no refraction).
+function solarFromUtc(utcMs){
+  const n = utcMs/86400000 + 2440587.5 - 2451545.0;
+  const L = (((280.460 + 0.9856474*n) % 360) + 360) % 360;
+  const g = (357.528 + 0.9856003*n) * RAD;
+  const lam = (L + 1.915*Math.sin(g) + 0.020*Math.sin(2*g)) * RAD;
+  const eps = (23.439 - 0.0000004*n) * RAD;
+  const ra  = Math.atan2(Math.cos(eps)*Math.sin(lam), Math.cos(lam));
+  const dec = Math.asin(Math.sin(eps)*Math.sin(lam));
+  const gmstH = (((18.697374558 + 24.06570982441908*n) % 24) + 24) % 24;
+  const ha = (gmstH*15 + LON)*RAD - ra;
+  const lat = LAT*RAD;
+  const alt = Math.asin(Math.sin(lat)*Math.sin(dec) + Math.cos(lat)*Math.cos(dec)*Math.cos(ha));
+  const az = Math.atan2(Math.sin(ha), Math.cos(ha)*Math.sin(lat) - Math.tan(dec)*Math.cos(lat))*DEG + 180;
+  return {altitude: alt*DEG, azimuth: ((az%360)+360)%360, declination: dec*DEG};
+}
+// PRIMARY: local Austin clock minutes since midnight on a date -> sun position.
+function solarPosition(dateStr, clockMin){
+  return solarFromUtc(clockToUtcMs(dateStr, clockMin));
+}
+// The original Spencer/NOAA series (same equations as before). tz = UTC offset in hours used to turn clock time into solar time.
+function solarSpencer(dateStr, clockMin, tz){
+  const p = parseDateStr(dateStr);
+  const doy = Math.round((Date.UTC(p.y, p.m-1, p.d) - Date.UTC(p.y, 0, 0))/86400000);
+  const hourDecimal = clockMin/60;
+  const gamma = 2*Math.PI/365*(doy-1+(hourDecimal-12)/24);
+  const eqtime = 229.18*(0.000075+0.001868*Math.cos(gamma)-0.032077*Math.sin(gamma)-0.014615*Math.cos(2*gamma)-0.040849*Math.sin(2*gamma));
+  const decl = 0.006918-0.399912*Math.cos(gamma)+0.070257*Math.sin(gamma)-0.006758*Math.cos(2*gamma)+0.000907*Math.sin(2*gamma)-0.002697*Math.cos(3*gamma)+0.00148*Math.sin(3*gamma);
+  const timeOffset = eqtime + 4*LON - 60*tz;
+  const tst = clockMin + timeOffset;
+  const ha = (tst/4) - 180;
+  const haRad = ha*RAD, latRad = LAT*RAD;
+  const cosZen = Math.sin(latRad)*Math.sin(decl) + Math.cos(latRad)*Math.cos(decl)*Math.cos(haRad);
+  const zenRad = Math.acos(Math.min(1, Math.max(-1, cosZen)));
+  const altitude = 90 - zenRad*DEG;
+  const denom = Math.cos(latRad)*Math.sin(zenRad);
+  let azimuth;
+  if (Math.abs(denom) < 1e-6){ azimuth = 180; }
+  else {
+    let X = (Math.sin(latRad)*Math.cos(zenRad) - Math.sin(decl)) / denom;
+    X = Math.min(1, Math.max(-1, X));
+    const acosX = Math.acos(X)*DEG;
+    azimuth = ha > 0 ? (acosX + 180) % 360 : (540 - acosX) % 360;
+  }
+  return {altitude, azimuth, declination: decl*DEG};
+}
+function legacySolarPosition(dateStr, clockMin){ return solarSpencer(dateStr, clockMin, LEGACY_TZ); }
+function angDiff(a, b){ let d = ((a-b+540)%360)-180; return d; }   // signed a−b in (−180,180]
+
+/* ====================== SHADOW GEOMETRY ====================== */
+function shadowVector(altitude, azimuth, height){
+  const rad = Math.PI/180;
+  const altClamped = Math.max(altitude, 2);
+  const len = Math.min(height / Math.tan(altClamped*rad), 200);
+  const azShadow = (azimuth + 180) % 360;
+  const dxu = Math.sin(azShadow*rad);   // east component
+  const dyu = -Math.cos(azShadow*rad);  // plan-y increases southward -> north component flips sign
+  return {dx: dxu*len, dy: dyu*len, dxu, dyu, len};
+}
+
+function raySegmentHitsRect(px,py,dirx,diry,maxDist,rect){
+  let tmin = 0, tmax = maxDist;
+  if (Math.abs(dirx) > 1e-9){
+    let tx1 = (rect.x0-px)/dirx, tx2 = (rect.x1-px)/dirx;
+    if (tx1>tx2){ const t=tx1; tx1=tx2; tx2=t; }
+    tmin = Math.max(tmin,tx1); tmax = Math.min(tmax,tx2);
+  } else if (px < rect.x0 || px > rect.x1) return false;
+  if (Math.abs(diry) > 1e-9){
+    let ty1 = (rect.y0-py)/diry, ty2 = (rect.y1-py)/diry;
+    if (ty1>ty2){ const t=ty1; ty1=ty2; ty2=t; }
+    tmin = Math.max(tmin,ty1); tmax = Math.min(tmax,ty2);
+  } else if (py < rect.y0 || py > rect.y1) return false;
+  return tmax >= tmin && tmax >= 0 && tmin <= maxDist;
+}
+
+// Point-to-segment distance, used for the tree shadow "capsule" (stadium) shape: the
+// projected canopy shadow is modeled as a shape swept continuously from the canopy's own
+// footprint (at the tree) to its projected footprint (at the shadow tip), rather than a
+// single circle teleported to the shadow tip. This is the simplified-but-continuous
+// elongated-shadow shape the brief asks for.
+function distToSegment(px,py,x1,y1,x2,y2){
+  const dx=x2-x1, dy=y2-y1;
+  const lenSq = dx*dx+dy*dy;
+  let t = lenSq>1e-9 ? ((px-x1)*dx+(py-y1)*dy)/lenSq : 0;
+  t = Math.max(0,Math.min(1,t));
+  const cx = x1+t*dx, cy = y1+t*dy;
+  return Math.hypot(px-cx, py-cy);
+}
+
+function computeShapesAt(altitude, azimuth, opts){
+  opts = opts || {};
+  const els = opts.elements || state.elements;
+  const shapes = [];
+  if (altitude > SUN_FLOOR_DEG){
+    if (opts.buildings !== false) BUILDINGS.forEach(b=>{
+      const sv = shadowVector(altitude, azimuth, b.h);
+      shapes.push({kind:"building", rect:b, dirToSunX:-sv.dxu, dirToSunY:-sv.dyu, maxDist:sv.len, density:1.0});
+    });
+    els.forEach(e=>{
+      const sv = shadowVector(altitude, azimuth, e.height);
+      if (e.kind === "tree"){
+        // capsule: swept from the tree's own canopy footprint (x1,y1) to the projected
+        // footprint at the shadow tip (x2,y2). Canopy diameter sets the width (r), tree
+        // height sets how far the tip can reach (via shadowVector's len), and azimuth sets
+        // the (dxu,dyu) direction.
+        shapes.push({kind:"capsule", x1:e.x, y1:e.y, x2:e.x+sv.dx, y2:e.y+sv.dy, r:e.diameter/2, density:e.density, ownerId:e.id});
+      } else {
+        shapes.push({kind:"rect", x0:e.x+sv.dx, y0:e.y+sv.dy, x1:e.x+e.w+sv.dx, y1:e.y+e.d+sv.dy, density:1.0, ownerId:e.id});
+      }
+    });
+  }
+  return shapes;
+}
+
+function transmittanceAt(x, y, shapes){
+  let t = 1;
+  for (let i=0;i<shapes.length;i++){
+    const s = shapes[i];
+    let covered = false;
+    if (s.kind === "building"){
+      covered = raySegmentHitsRect(x,y,s.dirToSunX,s.dirToSunY,s.maxDist,s.rect);
+    } else if (s.kind === "capsule"){
+      covered = distToSegment(x,y,s.x1,s.y1,s.x2,s.y2) <= s.r;
+    } else if (s.kind === "rect"){
+      covered = x>=s.x0 && x<=s.x1 && y>=s.y0 && y<=s.y1;
+    }
+    if (covered) t *= (1-s.density);
+    if (t <= 0.0001) return 0;
+  }
+  return t;
+}
+
+function inAnyBuilding(x,y){
+  return BUILDINGS.some(b=>x>=b.x0&&x<=b.x1&&y>=b.y0&&y<=b.y1);
+}
+
+/* ====================== GRID & ROUTE SAMPLES ====================== */
+function buildGrid(){
+  const cols = Math.floor(PLAN_W/CELL), rows = Math.floor(PLAN_H/CELL);
+  const cells = [], index = new Map();
+  for (let r=0;r<rows;r++){
+    for (let c=0;c<cols;c++){
+      const cx = c*CELL+CELL/2, cy = r*CELL+CELL/2;
+      if (inAnyBuilding(cx,cy)) continue;
+      index.set(r*cols+c, cells.length);
+      cells.push({c,r,x:cx,y:cy, exposure:0, temp:0, nb:[]});
+    }
+  }
+  // 4-neighbour lists, with proper bounds checks (the original key arithmetic wrapped across row ends)
+  cells.forEach(cell=>{
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dc,dr])=>{
+      const c2 = cell.c+dc, r2 = cell.r+dr;
+      if (c2<0||c2>=cols||r2<0||r2>=rows) return;
+      const j = index.get(r2*cols+c2);
+      if (j !== undefined) cell.nb.push(j);
+    });
+  });
+  state.grid = {cols, rows, cells};
+}
+function buildRouteSamples(){
+  const n = Math.floor(ROUTE_LEN/SAMPLE_SPACING)+1;
+  const samples = [];
+  for (let i=0;i<n;i++){
+    const s = i*SAMPLE_SPACING;
+    samples.push({s, x:ROUTE_X0+s, y:ROUTE_Y, exposure:0, temp:0});
+  }
+  state.routeSamples = samples;
+}
+
+function pointAtArcLength(s){
+  return {x: ROUTE_X0 + Math.max(0,Math.min(ROUTE_LEN,s)), y: ROUTE_Y};
+}
+
+/* ====================== SIMULATION ====================== */
+// Thermal model (one lumped surface layer per cell):
+//     C · dT/dt = k · (T_eq − T),   T_eq = T_air + SunExcess · (1 − albedo) · sin(α) · f
+// τ = 60·C/k minutes is the single time constant that governs BOTH warming and cooling. f is the
+// fraction of sun reaching the cell (0 = full shade), α the solar altitude.
+// A3 Stage 1 audit corrections:
+//  - Heating no longer ignores sun angle: the horizontal flux scales with sin(α). The original
+//    applied the same heating at 5 PM (α≈40°) as at noon (α≈62°).
+//  - “Cooling Rate” used to move the sunlit equilibrium temperature as well (G/k), so calibrating the
+//    cooling time constant would have silently changed how hot sunlit pavement gets, which no cooling
+//    measurement can justify. SunExcess is now a separate parameter. Its default (38 °F at zenith sun)
+//    is a placeholder re-based so the corrected model reproduces the A2 default Aug 15 peak (≈121.8 °F vs
+//    121.7 °F) after the sin(α) correction; it is an assumption until sun-lit field data replace it.
+//  - Explicit Euler (unstable for fast cooling) replaced by the exact exponential step for the local term.
+//  - The grid’s neighbour diffusion read cells already updated in the same step; it now reads the
+//    previous step only.
+//  - The sun is sampled at the middle of each step, not its end.
+//  - At 12:00 (t = 0) the original still ran a 10-minute step (exposure 10 min); it now runs none.
+
+function tauMinutes(P){ return 60*P.heatCapacity/P.coolingRate; }
+function stepTemperature(T, frac, altDeg, dtMin, P){
+  const s = Math.max(0, Math.sin(altDeg*RAD));
+  const Teq = P.ambient + P.sunExcess*(1-P.albedo)*s*frac;
+  return Teq + (T - Teq)*Math.exp(-(P.coolingRate/P.heatCapacity)*dtMin/60);
+}
+
+function recomputeTo(minutes){
+  const P = state.thermal;
+  const initTemp = P.ambient + P.initOffset;
+  const cells = state.grid.cells, samples = state.routeSamples;
+  cells.forEach(c=>{ c.exposure = 0; c.temp = initTemp; });
+  samples.forEach(s=>{ s.exposure = 0; s.temp = initTemp; });
+
+  let gridTemps = new Float64Array(cells.length).fill(initTemp);
+  let routeTemps = new Float64Array(samples.length).fill(initTemp);
+
+  let t0 = 0;
+  while (t0 < minutes - 1e-9){
+    const dt = Math.min(STEP_MIN, minutes - t0);
+    const sun = solarPosition(state.dateStr, 720 + t0 + dt/2);
+    const shapes = computeShapesAt(sun.altitude, sun.azimuth);
+
+    const newGrid = new Float64Array(cells.length);
+    for (let idx=0; idx<cells.length; idx++){
+      const c = cells[idx];
+      const frac = transmittanceAt(c.x, c.y, shapes);
+      c.exposure += frac*dt;
+      const prev = gridTemps[idx];
+      let nSum = 0; const nb = c.nb;
+      for (let k=0; k<nb.length; k++) nSum += gridTemps[nb[k]];
+      const neighbor = nb.length ? nSum/nb.length : prev;
+      newGrid[idx] = stepTemperature(prev, frac, sun.altitude, dt, P) + P.diffusionRate*(neighbor-prev)*(dt/60);
+    }
+    gridTemps = newGrid;
+
+    const newRoute = new Float64Array(samples.length);
+    for (let idx=0; idx<samples.length; idx++){
+      const s = samples[idx];
+      const frac = transmittanceAt(s.x, s.y, shapes);
+      s.exposure += frac*dt;
+      const prev = routeTemps[idx];
+      const left  = idx>0 ? routeTemps[idx-1] : prev;
+      const right = idx<samples.length-1 ? routeTemps[idx+1] : prev;
+      newRoute[idx] = stepTemperature(prev, frac, sun.altitude, dt, P) + P.diffusionRate*((left+right)/2-prev)*(dt/60);
+    }
+    routeTemps = newRoute;
+    t0 += dt;
+  }
+  for (let i=0;i<cells.length;i++) cells[i].temp = gridTemps[i];
+  for (let i=0;i<samples.length;i++) samples[i].temp = routeTemps[i];
+
+  // what is drawn: the shadow at exactly the slider time
+  const sunNow = solarPosition(state.dateStr, 720 + minutes);
+  state.currentShapes = computeShapesAt(sunNow.altitude, sunNow.azimuth);
+  state.currentAlt = sunNow.altitude;
+  state.currentAz = sunNow.azimuth;
+}
+
+function totalShadeUsed(){
+  return state.elements.reduce((sum,e)=> sum + (e.locked?0:e.cost), 0);
+}
+
+function budgetCap(){ return state.budgetCap; }
+
+/* ====================== EVALUATION ====================== */
+function evaluate(commit){
+  const used = totalShadeUsed();
+  const cap = budgetCap();
+  const samples = state.routeSamples;
+  const peakTemp = Math.max(...samples.map(s=>s.temp));
+  const coolCount = samples.filter(s=>s.temp<=state.threshold).length;
+  const coolPct = 100*coolCount/samples.length;
+  const exposureAvg = samples.reduce((a,s)=>a+s.exposure,0)/samples.length;
+
+  // hot segments (contiguous runs over threshold)
+  const hotSegments = [];
+  let run = null;
+  samples.forEach((s,i)=>{
+    if (s.temp > state.threshold){
+      if (!run) run = {startIdx:i, endIdx:i};
+      else run.endIdx = i;
+    } else if (run){
+      hotSegments.push(run); run=null;
+    }
+  });
+  if (run) hotSegments.push(run);
+  const hotSegmentsResolved = hotSegments.map(r=>({
+    start: samples[r.startIdx].s, end: samples[r.endIdx].s,
+    length: samples[r.endIdx].s - samples[r.startIdx].s + SAMPLE_SPACING
+  }));
+  const hotGapTotal = hotSegmentsResolved.reduce((a,r)=>a+r.length,0);
+  const longestHotGap = hotSegmentsResolved.length ? Math.max(...hotSegmentsResolved.map(r=>r.length)) : 0;
+
+  // clearance check
+  const routeBand = {x0:ROUTE_X0, x1:ROUTE_X1, y0:ROUTE_Y-1.5, y1:ROUTE_Y+1.5};
+  const blocked = state.elements.filter(e=>{
+    if (e.kind !== "canopy") return false;
+    if (e.height >= MIN_CLEARANCE) return false;
+    const overlap = !(e.x+e.w < routeBand.x0 || e.x > routeBand.x1 || e.y+e.d < routeBand.y0 || e.y > routeBand.y1);
+    return overlap;
+  });
+
+  let verdict, reason;
+  if (used > cap){
+    verdict = "REFUSED";
+    reason = `Shade budget exceeded: ${used} / ${cap} points used.`;
+  } else if (blocked.length){
+    verdict = "REFUSED";
+    reason = `ROUTE OBSTRUCTED — ${blocked[0].name} blocks required pedestrian clearance (height ${blocked[0].height.toFixed(1)} m < ${MIN_CLEARANCE} m).`;
+  } else if (hotGapTotal > 0){
+    verdict = "REFUSED";
+    reason = `${hotGapTotal.toFixed(0)} m of the pedestrian route remains above the ${state.threshold}°F threshold.`;
+  } else {
+    verdict = "SURVIVES";
+    reason = `Entire ${ROUTE_LEN.toFixed(0)} m route stays at or below ${state.threshold}°F by 5:00 PM.`;
+  }
+
+  const result = {
+    exposureAvg, peakTemp, coolPct, shadeUsed:used, cap,
+    hotSegments: hotSegmentsResolved, hotGapTotal, longestHotGap, blocked, verdict, reason
+  };
+  if (commit !== false) state.lastResult = result;
+  return result;
+}
+
+/* ====================== RENDERING ====================== */
+const canvas = document.getElementById("plan");
+const ctx = canvas.getContext("2d");
+function toPx(x,y){ return [x*SCALE, y*SCALE]; }
+
+function rampColor(t){
+  t = Math.max(0, Math.min(1, t));
+  const stops = [
+    [0.00, [28,95,194]],
+    [0.30, [46,139,87]],
+    [0.55, [232,194,45]],
+    [0.78, [224,120,31]],
+    [1.00, [193,53,43]],
+  ];
+  for (let i=0;i<stops.length-1;i++){
+    const [t0,c0] = stops[i], [t1,c1] = stops[i+1];
+    if (t>=t0 && t<=t1){
+      const f = (t-t0)/(t1-t0);
+      const r = Math.round(c0[0]+(c1[0]-c0[0])*f);
+      const g = Math.round(c0[1]+(c1[1]-c0[1])*f);
+      const b = Math.round(c0[2]+(c1[2]-c0[2])*f);
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+  return "rgb(193,53,43)";
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // ground zones
+  ctx.fillStyle = "#eef1f0"; // street
+  ctx.fillRect(0,19*SCALE, PLAN_W*SCALE, 15*SCALE);
+  ctx.fillStyle = "#faf9f6"; // sidewalks / plazas
+  ctx.fillRect(0,15*SCALE, PLAN_W*SCALE, 4*SCALE);
+  ctx.fillRect(0,34*SCALE, PLAN_W*SCALE, 24*SCALE);
+
+  // buildings
+  BUILDINGS.forEach(b=>{
+    ctx.fillStyle = "#d6d5cf";
+    ctx.fillRect(b.x0*SCALE, b.y0*SCALE, (b.x1-b.x0)*SCALE, (b.y1-b.y0)*SCALE);
+    ctx.strokeStyle = "#222221"; ctx.lineWidth = 1.3;
+    ctx.strokeRect(b.x0*SCALE, b.y0*SCALE, (b.x1-b.x0)*SCALE, (b.y1-b.y0)*SCALE);
+    ctx.fillStyle = "#6b6a63"; ctx.font = "9px ui-sans-serif, sans-serif";
+    ctx.fillText(`h=${b.h}m`, b.x0*SCALE+4, b.y0*SCALE+12);
+  });
+
+  // mode-specific field
+  if (state.displayMode === "shadow"){
+    ctx.save();
+    state.currentShapes.forEach(s=>{
+      ctx.fillStyle = `rgba(20,22,24,${0.12+0.22*s.density})`;
+      if (s.kind === "building"){
+        // approximate visual shadow footprint by sampling rect extents via its dir vector
+        const b = s.rect;
+        const dx = -s.dirToSunX*s.maxDist, dy=-s.dirToSunY*s.maxDist;
+        ctx.beginPath();
+        ctx.moveTo(b.x0*SCALE, b.y0*SCALE);
+        ctx.lineTo(b.x1*SCALE, b.y0*SCALE);
+        ctx.lineTo(b.x1*SCALE, b.y1*SCALE);
+        ctx.lineTo(b.x0*SCALE, b.y1*SCALE);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(b.x0*SCALE, b.y0*SCALE);
+        ctx.lineTo(b.x1*SCALE, b.y0*SCALE);
+        ctx.lineTo((b.x1+dx)*SCALE, (b.y0+dy)*SCALE);
+        ctx.lineTo((b.x0+dx)*SCALE, (b.y0+dy)*SCALE);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(b.x0*SCALE, b.y1*SCALE);
+        ctx.lineTo(b.x1*SCALE, b.y1*SCALE);
+        ctx.lineTo((b.x1+dx)*SCALE, (b.y1+dy)*SCALE);
+        ctx.lineTo((b.x0+dx)*SCALE, (b.y1+dy)*SCALE);
+        ctx.closePath(); ctx.fill();
+      } else if (s.kind === "capsule"){
+        // Stroking a line with round caps at width=2r draws exactly the swept
+        // capsule/stadium shape used for transmittance testing.
+        ctx.save();
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineCap = "round";
+        ctx.lineWidth = s.r*2*SCALE;
+        ctx.beginPath();
+        ctx.moveTo(s.x1*SCALE, s.y1*SCALE);
+        ctx.lineTo(s.x2*SCALE, s.y2*SCALE);
+        ctx.stroke();
+        ctx.restore();
+      } else if (s.kind === "rect"){
+        ctx.fillRect(s.x0*SCALE, s.y0*SCALE, (s.x1-s.x0)*SCALE, (s.y1-s.y0)*SCALE);
+      }
+    });
+    ctx.restore();
+  } else {
+    const cell = state.grid.cells;
+    const half = CELL*SCALE/2;
+    cell.forEach(c=>{
+      let t;
+      if (state.displayMode === "exposure"){ t = c.exposure/300; }
+      else { t = (c.temp - state.thermal.ambient) / (130-state.thermal.ambient); }
+      ctx.fillStyle = rampColor(t);
+      ctx.globalAlpha = 0.85;
+      ctx.fillRect(c.x*SCALE-half, c.y*SCALE-half, CELL*SCALE, CELL*SCALE);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  // route
+  ctx.strokeStyle = "#1a1a19"; ctx.lineWidth = 2; ctx.setLineDash([7,5]);
+  ctx.beginPath(); ctx.moveTo(ROUTE_X0*SCALE, ROUTE_Y*SCALE); ctx.lineTo(ROUTE_X1*SCALE, ROUTE_Y*SCALE); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle="#141413";
+  ctx.beginPath(); ctx.arc(ROUTE_X0*SCALE,ROUTE_Y*SCALE,4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(ROUTE_X1*SCALE,ROUTE_Y*SCALE,4,0,Math.PI*2); ctx.fill();
+  ctx.font="bold 11px ui-sans-serif, sans-serif";
+  ctx.fillText("START", ROUTE_X0*SCALE-6, ROUTE_Y*SCALE+20);
+  ctx.fillText("END", ROUTE_X1*SCALE-16, ROUTE_Y*SCALE+20);
+
+  // hot gap overlay
+  if (state.lastResult && state.lastResult.hotSegments.length){
+    const alpha = 0.55 + 0.4*Math.sin(state.pulsePhase);
+    state.lastResult.hotSegments.forEach(seg=>{
+      const x0=(ROUTE_X0+seg.start)*SCALE, x1=(ROUTE_X0+seg.end)*SCALE;
+      ctx.strokeStyle = `rgba(193,53,43,${alpha})`;
+      ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(x0, ROUTE_Y*SCALE); ctx.lineTo(x1, ROUTE_Y*SCALE); ctx.stroke();
+      ctx.fillStyle = `rgba(193,53,43,${Math.min(1,alpha+0.2)})`;
+      ctx.font = "bold 10px ui-sans-serif, sans-serif";
+      ctx.fillText("HOT GAP", (x0+x1)/2-20, ROUTE_Y*SCALE-10);
+    });
+  }
+  if (state.lastResult && state.lastResult.blocked.length){
+    state.lastResult.blocked.forEach(b=>{
+      const alpha = 0.55 + 0.4*Math.sin(state.pulsePhase);
+      ctx.strokeStyle = `rgba(193,53,43,${alpha})`;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(b.x*SCALE-2, b.y*SCALE-2, b.w*SCALE+4, b.d*SCALE+4);
+      ctx.fillStyle = `rgba(193,53,43,${Math.min(1,alpha+0.2)})`;
+      ctx.font = "bold 10px ui-sans-serif, sans-serif";
+      ctx.fillText("ROUTE OBSTRUCTED", b.x*SCALE-4, b.y*SCALE-8);
+    });
+  }
+
+  // elements
+  state.elements.forEach(e=>{
+    const selected = e.id === state.selectedId;
+    if (e.kind === "tree"){
+      const [px,py] = toPx(e.x,e.y);
+      const r = e.diameter/2*SCALE;
+      const shade = e.type==="existing" ? 0.5 : e.density;
+      const green = Math.round(207 - shade*140);
+      ctx.fillStyle = e.type==="existing" ? "rgba(150,150,140,0.35)" : `rgb(${80-shade*40},${150+green*0},${90-shade*30})`;
+      if (e.type==="existing"){
+        ctx.setLineDash([3,3]);
+        ctx.strokeStyle = "#8a897f"; ctx.lineWidth=1.3;
+        ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        ctx.fillStyle = `rgba(${Math.round(90-shade*30)}, ${Math.round(150-shade*20)}, ${Math.round(100-shade*30)}, ${0.55+shade*0.35})`;
+        ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle = selected ? "#1c4fa0" : "#1a1a19"; ctx.lineWidth = selected?2.5:1.3;
+        ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
+      }
+      ctx.fillStyle="#1a1a19"; ctx.beginPath(); ctx.arc(px,py,2.2,0,Math.PI*2); ctx.fill();
+    } else {
+      const px = e.x*SCALE, py=e.y*SCALE, pw=e.w*SCALE, pd=e.d*SCALE;
+      ctx.fillStyle = "rgba(190,210,225,0.65)";
+      ctx.fillRect(px,py,pw,pd);
+      ctx.strokeStyle = selected ? "#1c4fa0" : "#1a1a19"; ctx.lineWidth = selected?2.5:1.3;
+      ctx.strokeRect(px,py,pw,pd);
+      ctx.strokeStyle = "rgba(60,80,100,0.5)"; ctx.lineWidth=1;
+      for (let i=-pd;i<pw;i+=8){
+        ctx.beginPath(); ctx.moveTo(px+Math.max(0,i), py+Math.max(0,-i));
+        ctx.lineTo(px+Math.min(pw,i+pd), py+Math.min(pd,-i+pd)); ctx.stroke();
+      }
+      if (selected){
+        ctx.fillStyle="#1c4fa0";
+        ctx.fillRect(px+pw-6,py+pd-6,8,8);
+      }
+    }
+  });
+
+  // sun indicator
+  const sx=PLAN_W*SCALE-46, sy=46, rr=28;
+  ctx.strokeStyle="#9b9a92"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(sx,sy,rr,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle="#56554e"; ctx.font="9px ui-sans-serif, sans-serif"; ctx.fillText("N", sx-3, sy-rr-4);
+  const az = state.currentAz||225;
+  const ang = (az-90)*Math.PI/180;
+  ctx.strokeStyle="#e0781f"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+Math.cos(ang)*rr, sy+Math.sin(ang)*rr); ctx.stroke();
+  ctx.fillStyle="#e0781f"; ctx.beginPath(); ctx.arc(sx+Math.cos(ang)*rr, sy+Math.sin(ang)*rr,3,0,Math.PI*2); ctx.fill();
+}
+
+/* ====================== UI WIRING ====================== */
+const timeSlider = document.getElementById("timeSlider");
+const timeLabel = document.getElementById("timeLabel");
+const sunReadout = document.getElementById("sunReadout");
+const verdictBanner = document.getElementById("verdictBanner");
+
+function formatTime(min){
+  const total = 12*60+min;
+  let h = Math.floor(total/60), m = total%60;
+  const ampm = h>=12 ? "PM":"AM";
+  let h12 = h%12; if (h12===0) h12=12;
+  const p = parseDateStr(state.dateStr);
+  const zone = p ? zoneLabel(austinUtcOffset(p.y,p.m,p.d,total)) : "";
+  return `${h12}:${String(m).padStart(2,"0")} ${ampm} ${zone}`;
+}
+
+function updateAll(opts){
+  opts = opts || {};
+  recomputeTo(state.timeMinutes);
+  if (state.timeMinutes >= 300){ evaluate(); }
+  timeLabel.textContent = formatTime(state.timeMinutes);
+  sunReadout.textContent = `SOLAR ALT ${state.currentAlt.toFixed(1)}° · AZ ${state.currentAz.toFixed(1)}°`;
+  renderVerdict();
+  renderBudget();
+  renderMetrics();
+  if (!opts.keepSelected) renderSelected();
+  draw();
+  scheduleGrounding();
+}
+
+function renderVerdict(){
+  if (state.timeMinutes < 300 || !state.lastResult){ verdictBanner.hidden = true; return; }
+  const r = state.lastResult;
+  verdictBanner.hidden = false;
+  verdictBanner.className = "verdict-banner " + (r.verdict==="REFUSED"?"fail":"ok");
+  verdictBanner.innerHTML = r.verdict==="REFUSED"
+    ? `<span>✕ PROPOSAL REFUSED</span><span class="verdict-reason">${r.reason}</span>`
+    : `<span>✓ ROUTE SURVIVES</span><span class="verdict-reason">${r.reason}</span>`;
+}
+
+function renderBudget(){
+  const used = totalShadeUsed(), cap = budgetCap();
+  document.getElementById("budgetUsed").textContent = used;
+  document.getElementById("budgetTotal").textContent = cap;
+  const fill = document.getElementById("budgetFill");
+  fill.style.width = Math.min(100,(used/cap)*100)+"%";
+  fill.className = "budget-bar-fill" + (used>cap? " over":"");
+}
+
+function renderMetrics(){
+  const r = state.lastResult;
+  const used = totalShadeUsed(), cap = budgetCap();
+  const expEl = document.querySelector("#metricExposure .m-value");
+  const peakEl = document.querySelector("#metricPeak .m-value");
+  const coolEl = document.querySelector("#metricCool .m-value");
+  const budEl = document.querySelector("#metricBudget .m-value");
+  const gapEl = document.querySelector("#metricHotGap .m-value");
+  budEl.textContent = `${used}/${cap}`;
+  document.getElementById("metricBudget").className = "metric"+(used>cap?" alert":"");
+  if (!r){
+    expEl.textContent="—"; peakEl.textContent="—"; coolEl.textContent="—"; gapEl.textContent="—";
+    document.getElementById("metricPeak").className="metric";
+    document.getElementById("metricHotGap").className="metric metric-wide";
+    return;
+  }
+  expEl.textContent = r.exposureAvg.toFixed(0)+" min";
+  peakEl.textContent = r.peakTemp.toFixed(0)+"°F";
+  coolEl.textContent = r.coolPct.toFixed(0)+"%";
+  gapEl.textContent = r.longestHotGap.toFixed(0)+" m";
+  document.getElementById("metricPeak").className = "metric"+(r.peakTemp>state.threshold?" alert":"");
+  document.getElementById("metricHotGap").className = "metric metric-wide"+(r.longestHotGap>0?" alert":"");
+}
+
+// Slider handlers that update the plan without rebuilding the slider under the user's finger
+function liveSel(ev, apply, decimals){
+  const v = parseFloat(ev.target.value); apply(v);
+  const lab = ev.target.parentElement.querySelector("label span:last-child"); if (lab) lab.textContent = v.toFixed(decimals);
+  state.authorMode = "HUMAN"; syncAuthorButtons(); updateAll({keepSelected:true});
+}
+function canopyHint(e){
+  const h = document.getElementById("selHint");
+  if (h) h.textContent = `Cost: ${e.cost} Shade Points` + (e.height<MIN_CLEARANCE ? " · ⚠ below 2.4m pedestrian clearance" : "");
+}
+function findElement(id){ return state.elements.find(e=>e.id===id); }
+
+function renderSelected(){
+  const body = document.getElementById("selectedBody");
+  const e = findElement(state.selectedId);
+  if (!e || e.locked){ body.innerHTML = '<p class="selected-empty">Nothing selected. Click a tree or canopy on the plan.</p>'; return; }
+  if (e.kind === "tree"){
+    const d = TYPE_DEFAULTS[e.type];
+    body.innerHTML = `
+      <div class="sel-title"><span>${e.name}</span><button class="mini-del" id="delBtn">DELETE</button></div>
+      <div class="field"><label><span>Canopy Diameter (m)</span><span>${e.diameter.toFixed(1)}</span></label>
+        <input type="range" id="selDiameter" min="${d.dMin}" max="${d.dMax}" step="0.1" value="${e.diameter}"></div>
+      <div class="field"><label><span>Canopy Height (m)</span><span>${e.height.toFixed(1)}</span></label>
+        <input type="range" id="selHeight" min="${d.hMin}" max="${d.hMax}" step="0.1" value="${e.height}"></div>
+      <div class="field"><label><span>Shade Density</span><span>${e.density.toFixed(2)}</span></label>
+        <input type="range" id="selDensity" min="0.1" max="1" step="0.01" value="${e.density}"></div>
+      <p class="hint">Cost: ${e.cost} Shade Points</p>`;
+    document.getElementById("selDiameter").oninput = ev=>liveSel(ev, v=>{ e.diameter=v; }, 1);
+    document.getElementById("selHeight").oninput = ev=>liveSel(ev, v=>{ e.height=v; }, 1);
+    document.getElementById("selDensity").oninput = ev=>liveSel(ev, v=>{ e.density=v; }, 2);
+  } else {
+    body.innerHTML = `
+      <div class="sel-title"><span>${e.name}</span><button class="mini-del" id="delBtn">DELETE</button></div>
+      <div class="field"><label><span>Width (m)</span><span>${e.w.toFixed(1)}</span></label>
+        <input type="range" id="selW" min="2" max="10" step="0.1" value="${e.w}"></div>
+      <div class="field"><label><span>Depth (m)</span><span>${e.d.toFixed(1)}</span></label>
+        <input type="range" id="selD" min="1.5" max="8" step="0.1" value="${e.d}"></div>
+      <div class="field"><label><span>Height (m)</span><span>${e.height.toFixed(1)}</span></label>
+        <input type="range" id="selH" min="1.8" max="6" step="0.1" value="${e.height}"></div>
+      <p class="hint" id="selHint">Cost: ${e.cost} Shade Points ${e.height<MIN_CLEARANCE?' · ⚠ below 2.4m pedestrian clearance':''}</p>`;
+    const canopyLive = (ev, apply)=>{ liveSel(ev, v=>{ apply(v); e.cost = Math.round(e.w*e.d*CANOPY_COST_PER_M2); }, 1); canopyHint(e); };
+    document.getElementById("selW").oninput = ev=>canopyLive(ev, v=>{ e.w=v; });
+    document.getElementById("selD").oninput = ev=>canopyLive(ev, v=>{ e.d=v; });
+    document.getElementById("selH").oninput = ev=>canopyLive(ev, v=>{ e.height=v; });
+  }
+  document.getElementById("delBtn").onclick = ()=>{
+    state.elements = state.elements.filter(el=>el.id!==e.id);
+    state.selectedId = null; state.authorMode="HUMAN"; syncAuthorButtons(); updateAll();
+  };
+}
+
+/* display mode buttons */
+document.getElementById("displayModeGroup").addEventListener("click", ev=>{
+  const btn = ev.target.closest("button"); if (!btn) return;
+  document.querySelectorAll("#displayModeGroup .toggle-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  state.displayMode = btn.dataset.mode;
+  draw();
+});
+
+/* add element buttons */
+document.querySelectorAll("[data-place]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    state.placingType = btn.dataset.place;
+    document.getElementById("placeHint").textContent = `Click the plan to place a ${btn.dataset.place==='canopy'?'canopy':btn.dataset.place+' tree'}. Press Esc to cancel.`;
+    canvas.style.cursor = "copy";
+  });
+});
+window.addEventListener("keydown", ev=>{
+  if (ev.key === "Escape"){ state.placingType=null; canvas.style.cursor="crosshair"; document.getElementById("placeHint").textContent="Click a button, then click the plan to place it. Drag placed elements to move them; click to select."; }
+  if ((ev.key === "Delete" || ev.key === "Backspace") && state.selectedId && !/^(INPUT|TEXTAREA|SELECT)$/.test((ev.target && ev.target.tagName) || "")){
+    const e = findElement(state.selectedId);
+    if (e && !e.locked){
+      state.elements = state.elements.filter(el=>el.id!==e.id);
+      state.selectedId = null; state.authorMode="HUMAN"; syncAuthorButtons(); updateAll();
+    }
+  }
+});
+
+/* canvas mouse interaction */
+function mouseToWorld(ev){
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
+  const x = (ev.clientX-rect.left)*scaleX/SCALE;
+  const y = (ev.clientY-rect.top)*scaleY/SCALE;
+  return {x,y};
+}
+function hitTest(x,y){
+  for (let i=state.elements.length-1;i>=0;i--){
+    const e = state.elements[i];
+    if (e.locked) continue;
+    if (e.kind === "tree"){
+      const dx=x-e.x, dy=y-e.y;
+      if (dx*dx+dy*dy <= Math.pow(e.diameter/2+0.4,2)) return {id:e.id};
+    } else {
+      if (x>=e.x-0.3 && x<=e.x+e.w+0.3 && y>=e.y-0.3 && y<=e.y+e.d+0.3){
+        const nearHandle = Math.hypot(x-(e.x+e.w), y-(e.y+e.d)) < 0.9;
+        return {id:e.id, resizing:nearHandle};
+      }
+    }
+  }
+  return null;
+}
+let mouseDownPos = null;
+canvas.addEventListener("mousedown", ev=>{
+  const {x,y} = mouseToWorld(ev);
+  mouseDownPos = {x,y};
+  if (state.placingType){ return; }
+  const hit = hitTest(x,y);
+  if (hit){
+    state.selectedId = hit.id;
+    const e = findElement(hit.id);
+    if (hit.resizing){ state.dragging = {id:hit.id, resizing:true}; }
+    else { state.dragging = {id:hit.id, dx: x-e.x, dy: y-(e.kind==='tree'?e.y:e.y)}; }
+    renderSelected(); draw();
+  } else {
+    state.selectedId = null; renderSelected(); draw();
+  }
+});
+canvas.addEventListener("mousemove", ev=>{
+  if (!state.dragging) return;
+  const {x,y} = mouseToWorld(ev);
+  const e = findElement(state.dragging.id);
+  if (!e) return;
+  if (state.dragging.resizing && e.kind==="canopy"){
+    e.w = Math.max(2, x-e.x); e.d = Math.max(1.5, y-e.y);
+    e.cost = Math.round(e.w*e.d*CANOPY_COST_PER_M2);
+  } else {
+    e.x = Math.max(1,Math.min(PLAN_W-1, x - state.dragging.dx));
+    e.y = Math.max(16,Math.min(PLAN_H-2, y - state.dragging.dy));
+  }
+  state.authorMode = "HUMAN"; syncAuthorButtons();
+  updateAll();
+});
+window.addEventListener("mouseup", ev=>{
+  if (state.dragging){ state.dragging=null; return; }
+  if (state.placingType && mouseDownPos){
+    const {x,y} = mouseDownPos;
+    if (y>16 && y<PLAN_H-2 && !inAnyBuilding(x,y)){
+      let el;
+      if (state.placingType === "canopy") el = makeCanopy(x,y);
+      else el = makeTree(state.placingType, x, y);
+      state.elements.push(el);
+      state.selectedId = el.id;
+      state.authorMode = "HUMAN"; syncAuthorButtons();
+    }
+    state.placingType = null; canvas.style.cursor="crosshair";
+    document.getElementById("placeHint").textContent="Click a button, then click the plan to place it. Drag placed elements to move them; click to select.";
+    updateAll();
+  }
+  mouseDownPos = null;
+});
+
+/* time controls */
+timeSlider.addEventListener("input", ev=>{
+  stopRun();
+  state.timeMinutes = parseInt(ev.target.value,10);
+  updateAll();
+});
+function stopRun(){
+  state.running = false;
+  if (state.runTimer){ clearInterval(state.runTimer); state.runTimer=null; }
+  document.getElementById("btnRun").textContent = "▶ RUN AFTERNOON";
+}
+document.getElementById("btnRun").addEventListener("click", ()=>{
+  if (state.running){ stopRun(); return; }
+  state.running = true;
+  document.getElementById("btnRun").textContent = "▶ RUNNING…";
+  state.runTimer = setInterval(()=>{
+    state.timeMinutes = Math.min(300, state.timeMinutes+10);
+    timeSlider.value = state.timeMinutes;
+    updateAll();
+    if (state.timeMinutes>=300) stopRun();
+  }, 110);
+});
+document.getElementById("btnPause").addEventListener("click", stopRun);
+document.getElementById("btnReset").addEventListener("click", ()=>{
+  stopRun();
+  state.timeMinutes = 0; timeSlider.value = 0;
+  state.lastResult = null;
+  updateAll();
+});
+
+/* settings */
+function bindRange(id, valId, key, isThermal){
+  const el = document.getElementById(id);
+  el.addEventListener("input", ()=>{
+    const v = parseFloat(el.value);
+    document.getElementById(valId).textContent = v;
+    if (isThermal) state.thermal[key] = v; else state[key] = v;
+    updateAll();
+  });
+}
+bindRange("setAlbedo","valAlbedo","albedo",true);
+bindRange("setCap","valCap","heatCapacity",true);
+bindRange("setCooling","valCool","coolingRate",true);
+bindRange("setDiffusion","valDiff","diffusionRate",true);
+bindRange("setSunExcess","valSunExcess","sunExcess",true);
+bindRange("setAmbient","valAmbient","ambient",true);
+bindRange("setInit","valInit","initOffset",true);
+bindRange("setThreshold","valThresh","threshold",false);
+bindRange("setBudgetCap","valBudgetCap","budgetCap",false);
+function setSimDate(ds){ state.dateStr = ds; document.getElementById("phDate").value = ds; updateAll(); }
+document.getElementById("dateSelect").addEventListener("change", ev=>{
+  if (ev.target.value === "custom"){ const v = document.getElementById("customDate").value; if (parseDateStr(v)) setSimDate(v); }
+  else { document.getElementById("customDate").value = ev.target.value; setSimDate(ev.target.value); }
+});
+document.getElementById("customDate").addEventListener("change", ev=>{
+  const p = parseDateStr(ev.target.value);
+  if (p && p.y >= 2007){ document.getElementById("dateSelect").value = "custom"; setSimDate(ev.target.value); }
+});
+
+/* suggest next move */
+function labelFor(e){ return e.name; }
+function suggestNextMove(){
+  const r = state.lastResult;
+  if (!r){ return {text:"Run the afternoon to 5:00 PM and score a round first — I need a result to analyze.", apply:null}; }
+  const remaining = r.cap - r.shadeUsed;
+  if (r.shadeUsed > r.cap){
+    const candidates = state.elements.filter(e=>!e.locked).sort((a,b)=>a.cost-b.cost);
+    if (candidates.length){
+      const sm = candidates[0];
+      return {text:`Remove or downsize ${labelFor(sm)} (${sm.cost} pts) — the proposal is ${r.shadeUsed-r.cap} points over budget.`,
+        apply:()=>{ state.elements = state.elements.filter(e=>e.id!==sm.id); state.selectedId=null; }};
+    }
+  }
+  if (r.blocked.length){
+    const b = r.blocked[0];
+    return {text:`Raise ${labelFor(b)} to at least ${MIN_CLEARANCE} m clearance, or move it off the pedestrian route.`,
+      apply:()=>{ b.height = MIN_CLEARANCE+0.2; }};
+  }
+  if (r.hotSegments.length){
+    const longest = r.hotSegments.reduce((a,b)=> b.length>a.length?b:a);
+    const midS = (longest.start+longest.end)/2;
+    const mid = pointAtArcLength(midS);
+    let nearest=null, nd=Infinity;
+    state.elements.forEach(e=>{
+      if (e.locked) return;
+      const ex = e.kind==="tree"?e.x:e.x+e.w/2, ey=e.kind==="tree"?e.y:e.y+e.d/2;
+      const d = Math.hypot(ex-mid.x, ey-mid.y);
+      if (d<nd){ nd=d; nearest=e; }
+    });
+    if (nearest && nd>4 && nd<22){
+      return {text:`Move ${labelFor(nearest)} toward the longest-exposed segment, centered near ${midS.toFixed(0)} m along the route.`,
+        apply:()=>{ if (nearest.kind==="tree"){ nearest.x=mid.x; nearest.y=mid.y+3; } else { nearest.x=mid.x-nearest.w/2; nearest.y=mid.y+3-nearest.d/2; } }};
+    }
+    if (longest.length < 7 && remaining >= 14){
+      return {text:`Add a narrow canopy across the remaining hot gap near ${midS.toFixed(0)} m along the route.`,
+        apply:()=>{ state.elements.push(makeCanopy(mid.x, mid.y+2, Math.max(3,longest.length), 3, 2.8)); }};
+    }
+    if (remaining >= 30){
+      return {text:`Add a Large/Dense Tree near ${midS.toFixed(0)} m to cover the longest-exposed segment (${longest.length.toFixed(0)} m).`,
+        apply:()=>{ state.elements.push(makeTree("large", mid.x, mid.y+3)); }};
+    }
+    if (remaining >= 18){
+      return {text:`Add a Medium/Spreading Tree near ${midS.toFixed(0)} m to reduce exposure on this segment.`,
+        apply:()=>{ state.elements.push(makeTree("medium", mid.x, mid.y+3)); }};
+    }
+    if (remaining >= 10){
+      return {text:`Add a Small/Open Tree near ${midS.toFixed(0)} m — remaining budget is tight, so start small here.`,
+        apply:()=>{ state.elements.push(makeTree("small", mid.x, mid.y+3)); }};
+    }
+    const large = state.elements.find(e=>e.type==="large" && !r.hotSegments.some(seg=>Math.abs((seg.start+seg.end)/2-(e.x-ROUTE_X0))<10));
+    if (large){
+      return {text:`Replace ${labelFor(large)} with distributed smaller shade nearer the hot gap at ${midS.toFixed(0)} m.`,
+        apply:()=>{ state.elements=state.elements.filter(e=>e.id!==large.id); state.elements.push(makeTree("small", mid.x-4, mid.y+3)); state.elements.push(makeTree("small", mid.x+4, mid.y+3)); }};
+    }
+    return {text:`No shade budget remains to close the gap at ${midS.toFixed(0)} m — remove an underused element first.`, apply:null};
+  }
+  return {text:"Current configuration survives. Consider trimming redundant overlap to free up shade points for future rounds.", apply:null};
+}
+
+function syncAuthorButtons(){
+  document.querySelectorAll("#authorToggle button").forEach(b=>b.classList.toggle("active", b.dataset.author===state.authorMode));
+}
+document.getElementById("authorToggle").addEventListener("click", ev=>{
+  const btn = ev.target.closest("button"); if (!btn) return;
+  state.authorMode = btn.dataset.author; syncAuthorButtons();
+});
+
+const proposalBox = document.getElementById("proposalBox");
+const proposalText = document.getElementById("proposalText");
+document.getElementById("btnSuggest").addEventListener("click", ()=>{
+  state.proposal = suggestNextMove();
+  proposalText.textContent = state.proposal.text;
+  proposalBox.classList.add("show");
+  document.getElementById("btnAccept").disabled = !state.proposal.apply;
+});
+document.getElementById("btnAccept").addEventListener("click", ()=>{
+  if (state.proposal && state.proposal.apply){
+    state.proposal.apply();
+    state.authorMode = "MODEL"; syncAuthorButtons();
+    // Save the exact accepted proposal text as the MOVE for this round — the student can
+    // still edit it before scoring, but it starts as the model's own words.
+    document.getElementById("moveDescription").value = state.proposal.text;
+  }
+  proposalBox.classList.remove("show");
+  updateAll();
+});
+document.getElementById("btnReject").addEventListener("click", ()=>{
+  proposalBox.classList.remove("show");
+});
+
+/* score round + history */
+function escapeHtml(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function renderHistory(){
+  const body = document.getElementById("historyBody");
+  if (!state.rounds.length){
+    body.innerHTML = '<tr class="empty-row"><td colspan="9">No rounds scored yet. Place shade, run the afternoon, then SCORE ROUND.</td></tr>';
+    return;
+  }
+  body.innerHTML = state.rounds.map(r=>`
+    <tr>
+      <td>${r.round}</td><td>${r.author}</td><td style="white-space:normal; max-width:220px;">${escapeHtml(r.move)}</td>
+      <td>${r.exposureAvg.toFixed(0)}</td><td>${r.peakTemp.toFixed(0)}</td>
+      <td>${r.coolPct.toFixed(0)}%</td><td>${r.longestHotGap.toFixed(0)} m</td><td>${r.shadeUsed}/${r.cap}</td>
+      <td class="${r.verdict==='SURVIVES'?'pass':'refused'}">${r.verdict==='SURVIVES'?'PASS':'REFUSED'}</td>
+    </tr>`).join("");
+}
+document.getElementById("btnScore").addEventListener("click", ()=>{
+  stopRun();
+  if (state.timeMinutes < 300){ state.timeMinutes = 300; timeSlider.value = 300; }
+  updateAll();
+  const r = evaluate();
+  state.roundNum++;
+  const moveInput = document.getElementById("moveDescription");
+  const moveText = moveInput.value.trim() || (state.authorMode==="MODEL" ? "(model move — no proposal text captured)" : "(no move description entered)");
+  state.rounds.push({round: state.roundNum, author: state.authorMode, move: moveText, exposureAvg:r.exposureAvg, peakTemp:r.peakTemp, coolPct:r.coolPct, longestHotGap:r.longestHotGap, shadeUsed:r.shadeUsed, cap:r.cap, verdict:r.verdict});
+  moveInput.value = "";
+  renderHistory();
+  renderVerdict();
+});
+document.getElementById("btnExport").addEventListener("click", async ()=>{
+  function csvEscape(v){
+    v = String(v);
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  }
+  const header = ["ROUND","AUTHOR","MOVE","EXPOSURE_MINUTES","PEAK_TEMP_F","COOL_ROUTE_PCT","LONGEST_HOT_GAP_M","SHADE_USED","SHADE_CAP","RESULT"];
+  const rows = state.rounds.map(r=>[r.round,r.author,csvEscape(r.move),r.exposureAvg.toFixed(1),r.peakTemp.toFixed(1),r.coolPct.toFixed(1),r.longestHotGap.toFixed(1),r.shadeUsed,r.cap,r.verdict==='SURVIVES'?'PASS':'REFUSED']);
+  const csv = [header,...rows].map(row=>row.join(",")).join("\n");
+  // In a hosted Artifact view, offer the save through the platform's downloads capability.
+  // In a standalone file (e.g. served from GitHub Pages) window.claude is absent, so fall
+  // back to a normal in-browser Blob download.
+  let handled = false;
+  if (window.claude && typeof window.claude.use === "function"){
+    try{
+      const downloads = await window.claude.use("downloads");
+      if (downloads){
+        await downloads.save({filename:"4pm-street-rounds.csv", data:csv});
+        handled = true;
+      }
+    } catch(e){ /* viewer declined or capability unavailable — fall back below */ }
+  }
+  if (!handled){
+    const blob = new Blob([csv],{type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download="4pm-street-rounds.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+});
+
+/* pulse animation loop */
+let lastPulseTs = 0;
+function pulseLoop(ts){
+  if (state.lastResult && (state.lastResult.hotSegments.length || state.lastResult.blocked.length)){
+    if (!lastPulseTs || ts-lastPulseTs>50){
+      state.pulsePhase += 0.12;
+      draw();
+      lastPulseTs = ts;
+    }
+  }
+  requestAnimationFrame(pulseLoop);
+}
+requestAnimationFrame(pulseLoop);
+
+/* ====================== A3 · GROUNDING INSTRUMENT ====================== */
+const $ = id => document.getElementById(id);
+const esc = s => escapeHtml(s);
+const fmt = (x, d) => (Number.isFinite(x) ? x.toFixed(d) : "—");
+const pad2 = n => String(n).padStart(2, "0");
+
+/* ---------- browser storage (falls back to memory with a visible notice) ---------- */
+const STORE_KEYS = {field:"fourpm.a3.field.v1", cooling:"fourpm.a3.cooling.v1", cal:"fourpm.a3.calibration.v1"};
+const Store = {
+  persistent: (()=>{ try{ localStorage.setItem("__fourpm_t","1"); localStorage.removeItem("__fourpm_t"); return true; } catch(e){ return false; } })(),
+  mem: {},
+  load(key, def){
+    try{
+      if (this.persistent){ const s = localStorage.getItem(key); if (s !== null) return JSON.parse(s); }
+      else if (key in this.mem) return JSON.parse(this.mem[key]);
+    } catch(e){}
+    return def;
+  },
+  save(key, val){
+    const s = JSON.stringify(val);
+    if (this.persistent){ try{ localStorage.setItem(key, s); return true; } catch(e){ this.persistent = false; } }
+    this.mem[key] = s; return false;
+  }
+};
+
+/* ---------- file saving: hosted-page downloads capability, plain Blob elsewhere (GitHub Pages) ---------- */
+let hostDownloads = null;
+if (window.claude && typeof window.claude.use === "function"){
+  try{ window.claude.use("downloads").then(d=>{ hostDownloads = d; }).catch(()=>{}); } catch(e){}
+}
+function blobDownload(filename, text, mime){
+  const blob = new Blob([text], {type: mime||"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function saveFile(filename, text, mime, note){
+  if (hostDownloads){
+    hostDownloads.save({filename, data:text}).then(()=>{ if (note) note("Saved " + filename + "."); })
+      .catch(e=>{ if (e && e.code === "declined"){ if (note) note("Save cancelled."); } else blobDownload(filename, text, mime); });
+    return;
+  }
+  blobDownload(filename, text, mime);
+  if (note) note("Downloaded " + filename + ".");
+}
+
+/* ====================== PURE HELPERS (CSV, validation, fitting) ====================== */
+/*@@PURE-BEGIN*/
+function numOrNull(v){
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  if (s === "") return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+function parseClock(s){
+  const m = /^\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])?\s*$/.exec(s||"");
+  if (!m) return null;
+  let h = +m[1]; const mi = +m[2], ap = m[3];
+  if (mi > 59) return null;
+  if (ap){ if (h < 1 || h > 12) return null; h = h%12; if (/p/i.test(ap)) h += 12; }
+  else if (h > 23) return null;
+  return h*60 + mi;
+}
+function fmtClock(min){ return pad2(Math.floor(min/60)) + ":" + pad2(min%60); }
+
+function parseCSV(text){
+  text = String(text).replace(/^\uFEFF/, "");
+  const rows = []; let row = [], cell = "", inQ = false, lineStart = true, skip = false;
+  const pushRow = ()=>{ row.push(cell); cell = ""; if (row.length > 1 || row[0].trim() !== "") rows.push(row); row = []; };
+  for (let i=0; i<text.length; i++){
+    const ch = text[i];
+    if (skip){ if (ch === "\n"){ skip = false; lineStart = true; } continue; }
+    if (inQ){ if (ch === '"'){ if (text[i+1] === '"'){ cell += '"'; i++; } else inQ = false; } else cell += ch; continue; }
+    if (lineStart && ch === "#"){ skip = true; continue; }
+    if (ch === '"'){ inQ = true; lineStart = false; continue; }
+    if (ch === ","){ row.push(cell); cell = ""; lineStart = false; continue; }
+    if (ch === "\r") continue;
+    if (ch === "\n"){ pushRow(); lineStart = true; continue; }
+    cell += ch; lineStart = false;
+  }
+  if (cell !== "" || row.length) pushRow();
+  return rows;
+}
+function normHeader(h){ return String(h||"").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""); }
+
+const FIELD_COLS = ["date","time","point_id","surface","condition","surface_temp_f","air_temp_f","notes","object_height_m","shadow_length_m"];
+const FIELD_REQUIRED = ["date","time","point_id","surface","condition","surface_temp_f"];
+const COL_ALIASES = {
+  date:["date","measurement_date"], time:["time","local_time","clock_time"],
+  point_id:["point_id","point","location","location_id","id"], surface:["surface","surface_type"],
+  condition:["condition","sun_shade","sun_or_shade","exposure"],
+  surface_temp_f:["surface_temp_f","surface_f","surface_temperature_f","temp_f","pavement_temp_f"],
+  air_temp_f:["air_temp_f","air_f","air_temperature_f"], notes:["notes","note","comments"],
+  object_height_m:["object_height_m","height_m"], shadow_length_m:["shadow_length_m","shadow_m"]
+};
+function mapHeaders(headerRow){
+  const norm = headerRow.map(normHeader), idx = {};
+  FIELD_COLS.forEach(col=>{ const j = norm.findIndex(h=>COL_ALIASES[col].includes(h)); if (j >= 0) idx[col] = j; });
+  return idx;
+}
+function normSurface(s){
+  const map = {asphalt:"asphalt", blacktop:"asphalt", concrete:"concrete", cement:"concrete", brick:"brick", pavers:"brick", paver:"brick", "brick / pavers":"brick", stone:"stone", granite:"stone", flagstone:"stone", "stone / granite":"stone", other:"other"};
+  return map[String(s||"").trim().toLowerCase()] || null;
+}
+function normCond(s){
+  const map = {sun:"sun", sunny:"sun", sunlit:"sun", shade:"shade", shaded:"shade", partial:"partial", transition:"partial", "partial / transition":"partial", "part sun":"partial"};
+  return map[String(s||"").trim().toLowerCase()] || null;
+}
+function newId(prefix){ return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function validateMeasurement(raw){
+  const errs = [];
+  const p = parseDateStr(raw.date);
+  if (!p) errs.push("date must be YYYY-MM-DD"); else if (p.y < 2007) errs.push("dates before 2007 are not supported (DST rule)");
+  const clock = parseClock(raw.time);
+  if (clock === null) errs.push("time must be HH:MM on the local Austin clock");
+  const point = String(raw.point_id||"").trim();
+  if (!point) errs.push("point ID is required"); else if (point.length > 40) errs.push("point ID is longer than 40 characters");
+  const surface = normSurface(raw.surface);
+  if (!surface) errs.push("surface must be asphalt, concrete, brick, stone or other");
+  const cond = normCond(raw.condition);
+  if (!cond) errs.push("condition must be sun, shade or partial");
+  const T = numOrNull(raw.surface_temp_f);
+  if (T === null || Number.isNaN(T)) errs.push("surface temperature (°F) is required and must be a number");
+  else if (T < 30 || T > 200) errs.push("surface temperature is outside 30–200 °F");
+  const Ta = numOrNull(raw.air_temp_f);
+  if (Ta !== null && (Number.isNaN(Ta) || Ta < 0 || Ta > 130)) errs.push("air temperature is outside 0–130 °F");
+  const H = numOrNull(raw.object_height_m), S = numOrNull(raw.shadow_length_m);
+  if ((H === null) !== (S === null)) errs.push("object height and shadow length must be given together");
+  if (H !== null && (Number.isNaN(H) || H < 0.1 || H > 60)) errs.push("object height is outside 0.1–60 m");
+  if (S !== null && (Number.isNaN(S) || S < 0 || S > 300)) errs.push("shadow length is outside 0–300 m");
+  if (errs.length) return {ok:false, errors:errs};
+  return {ok:true, record:{
+    id:newId("m"), date:`${p.y}-${pad2(p.m)}-${pad2(p.d)}`, time:fmtClock(clock), point_id:point, surface, condition:cond,
+    surface_temp_f:T, air_temp_f:Ta, notes:String(raw.notes||"").trim().slice(0,300), object_height_m:H, shadow_length_m:S
+  }};
+}
+function dupKey(r){ return [r.date, r.time, r.point_id.toLowerCase(), r.condition].join("|"); }
+function csvCell(v, isText){
+  if (v === null || v === undefined) return "";
+  let s = String(v);
+  if (isText && /^[=+\-@\t\r]/.test(s)) s = "'" + s;          // neutralise spreadsheet formula injection
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+/* ---------- exponential cooling fit ---------- */
+const COOL_RULES = {
+  minPoints: 5, minSpanMin: 20, minDropSigma: 3, minStartAboveAirSigma: 3,
+  maxRiseSigma: 1.5, maxRmseSigma: 1.0, warnRmseSigma: 0.75,
+  maxRelSE: 0.5, warnRelSE: 0.25, tauMin: 5, tauMax: 600, gridMin: 2, gridMax: 2000, warnWindowOverTau: 0.5,
+  maxAsymptoteSigma: 3, warnAsymptoteSigma: 1.5
+};
+function solveSym(M, b){                                   // small Gauss-Jordan, returns null if singular
+  const n = M.length, A = M.map((r,i)=>r.concat(b ? [b[i]] : []));
+  for (let c=0; c<n; c++){
+    let p = c; for (let r=c+1; r<n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    if (Math.abs(A[p][c]) < 1e-12) return null;
+    [A[c], A[p]] = [A[p], A[c]];
+    const d = A[c][c]; for (let j=0; j<A[c].length; j++) A[c][j] /= d;
+    for (let r=0; r<n; r++) if (r !== c){ const f = A[r][c]; for (let j=0; j<A[r].length; j++) A[r][j] -= f*A[c][j]; }
+  }
+  return A.map(r=>r.slice(n));
+}
+function covFromJacobian(J, s2){                           // cov = s2 · (JᵀJ)⁻¹
+  const p = J[0].length, JtJ = Array.from({length:p}, ()=>new Array(p).fill(0));
+  J.forEach(row=>{ for (let a=0;a<p;a++) for (let b=0;b<p;b++) JtJ[a][b] += row[a]*row[b]; });
+  const eye = Array.from({length:p}, (_,i)=>{ const r = new Array(p).fill(0); r[i] = 1; return r; });
+  const cols = []; for (let j=0;j<p;j++){ const sol = solveSym(JtJ, eye.map(r=>r[j])); if (!sol) return null; cols.push(sol.map(r=>r[0])); }
+  return cols.map(col=>col.map(v=>v*s2));                  // inverse is symmetric
+}
+function minimiseTau(sseOf){
+  const N = 260, lo = COOL_RULES.gridMin, hi = COOL_RULES.gridMax, tauAt = i=>lo*Math.pow(hi/lo, i/(N-1));
+  let bi = -1, bs = Infinity;
+  for (let i=0;i<N;i++){ const v = sseOf(tauAt(i)); if (v < bs){ bs = v; bi = i; } }
+  if (bi < 0) return null;
+  let a = Math.log(tauAt(Math.max(0,bi-1))), b = Math.log(tauAt(Math.min(N-1,bi+1)));
+  const gr = (Math.sqrt(5)-1)/2; let c = b - gr*(b-a), d = a + gr*(b-a), fc = sseOf(Math.exp(c)), fd = sseOf(Math.exp(d));
+  for (let k=0;k<70;k++){ if (fc < fd){ b = d; d = c; fd = fc; c = b - gr*(b-a); fc = sseOf(Math.exp(c)); } else { a = c; c = d; fc = fd; d = a + gr*(b-a); fd = sseOf(Math.exp(d)); } }
+  const tau = Math.exp((a+b)/2);
+  return {tau, sse: sseOf(tau), atBound: bi <= 0 || bi >= N-1};
+}
+// T(t) = Tinf + A·exp(−t/τ), Tinf fixed (the simulation relaxes toward air temperature)
+function fitFixedAsymptote(ts, Ts, Tinf){
+  const n = ts.length;
+  const lsq = tau=>{
+    let sye = 0, see = 0; const e = ts.map(t=>Math.exp(-t/tau));
+    for (let i=0;i<n;i++){ sye += (Ts[i]-Tinf)*e[i]; see += e[i]*e[i]; }
+    const A = see > 0 ? sye/see : 0; let sse = 0;
+    for (let i=0;i<n;i++){ const r = Ts[i] - (Tinf + A*e[i]); sse += r*r; }
+    return {A, sse};
+  };
+  const m = minimiseTau(tau=>lsq(tau).sse); if (!m) return null;
+  const {A} = lsq(m.tau), dof = n - 2;
+  const J = ts.map(t=>{ const e = Math.exp(-t/m.tau); return [e, A*e*t/(m.tau*m.tau)]; });
+  return {Tinf, A, tau:m.tau, sse:m.sse, dof, rmse:Math.sqrt(m.sse/n), atBound:m.atBound, J, p:2};
+}
+// T(t) = Tinf + A·exp(−t/τ), Tinf free (diagnostic only)
+function fitFreeAsymptote(ts, Ts){
+  const n = ts.length;
+  const lsq = tau=>{
+    const e = ts.map(t=>Math.exp(-t/tau));
+    let Sx=0, Sxx=0, Sy=0, Sxy=0; for (let i=0;i<n;i++){ Sx+=e[i]; Sxx+=e[i]*e[i]; Sy+=Ts[i]; Sxy+=e[i]*Ts[i]; }
+    const det = n*Sxx - Sx*Sx; if (Math.abs(det) < 1e-12) return {sse:Infinity};
+    const A = (n*Sxy - Sx*Sy)/det, Tinf = (Sy - A*Sx)/n; let sse = 0;
+    for (let i=0;i<n;i++){ const r = Ts[i] - (Tinf + A*e[i]); sse += r*r; }
+    return {A, Tinf, sse};
+  };
+  const m = minimiseTau(tau=>lsq(tau).sse); if (!m || !Number.isFinite(m.sse)) return null;
+  const f = lsq(m.tau), dof = n - 3;
+  const J = ts.map(t=>{ const e = Math.exp(-t/m.tau); return [1, e, f.A*e*t/(m.tau*m.tau)]; });
+  return {Tinf:f.Tinf, A:f.A, tau:m.tau, sse:m.sse, dof, rmse:Math.sqrt(m.sse/n), atBound:m.atBound, J, p:3};
+}
+function withUncertainty(fit, sigma, tauIdx, tinfIdx){
+  if (!fit) return fit;
+  fit.halfLife = fit.tau*Math.LN2;
+  if (fit.dof < 1){ fit.seTau = NaN; fit.relSE = NaN; return fit; }
+  const sdFloor = sigma/2;                                  // ±σ is treated as a ≈95 % bound, i.e. s.d. ≈ σ/2
+  const s2 = Math.max(fit.sse/fit.dof, sdFloor*sdFloor);
+  const cov = covFromJacobian(fit.J, s2);
+  fit.seTau = cov ? Math.sqrt(Math.max(0, cov[tauIdx][tauIdx])) : NaN;
+  fit.relSE = fit.seTau / fit.tau;
+  if (tinfIdx !== undefined) fit.seTinf = cov ? Math.sqrt(Math.max(0, cov[tinfIdx][tinfIdx])) : NaN;
+  return fit;
+}
+
+// session = {readings:[{t,T}], airTemp, sigma}; returns the verdict with every reason spelled out
+function assessCooling(session){
+  const R = COOL_RULES, out = {verdict:"REFUSE", kind:"insufficient", reasons:[], warnings:[], pts:[], fit:null, free:null};
+  const sigma = numOrNull(session.sigma), Tair = numOrNull(session.airTemp);
+  const pts = [];
+  (session.readings||[]).forEach((r,i)=>{
+    const t = numOrNull(r.t), T = numOrNull(r.T);
+    const filledT = String(r.t??"").trim() !== "", filledTemp = String(r.T??"").trim() !== "";
+    if (t !== null && T !== null && !Number.isNaN(t) && !Number.isNaN(T)) pts.push({t, T});
+    else if (filledT || filledTemp){
+      if (!(filledT && !filledTemp)) out.warnings.push(`Row ${i+1} is incomplete or not a number and was ignored.`);
+    }
+  });
+  pts.sort((a,b)=>a.t-b.t); out.pts = pts;
+  if (sigma === null || Number.isNaN(sigma) || sigma < 0.2 || sigma > 10) out.reasons.push("Enter the thermometer uncertainty (0.2–10 °F); every test below is measured against it.");
+  const n = pts.length;
+  if (n < R.minPoints) out.reasons.push(`Only ${n} valid reading${n===1?"":"s"}; at least ${R.minPoints} are required to fit a curve with two free parameters and still check it.`);
+  if (pts.some(p=>p.T < 30 || p.T > 200)) out.reasons.push("A reading is outside the plausible 30–200 °F range.");
+  if (pts.some(p=>p.t < 0)) out.reasons.push("Times must be minutes after shade arrives (0 or more).");
+  for (let i=1;i<n;i++) if (pts[i].t === pts[i-1].t){ out.reasons.push("Two readings share the same time; one instant cannot have two temperatures."); out.kind = "inconsistent"; break; }
+  const span = n ? pts[n-1].t - pts[0].t : 0; out.span = span;
+  if (n >= 2 && span < R.minSpanMin) out.reasons.push(`The readings span ${fmt(span,0)} min; at least ${R.minSpanMin} min are required to see curvature.`);
+  if (Tair === null || Number.isNaN(Tair)) out.reasons.push("Air temperature is required: the simulation cools the pavement toward air temperature, so the fit must use the same asymptote.");
+  else if (Tair < 0 || Tair > 130) out.reasons.push("Air temperature is outside 0–130 °F.");
+  if (out.reasons.length){ out.kind = out.kind === "inconsistent" ? "inconsistent" : "insufficient"; return out; }
+
+  // data are well-formed: now test whether they are consistent with exponential cooling
+  const ts = pts.map(p=>p.t), Ts = pts.map(p=>p.T);
+  const drop = Ts[0] - Ts[n-1]; out.drop = drop;
+  let inconsistent = false;
+  if (Ts[0] - Tair < R.minStartAboveAirSigma*sigma){ out.reasons.push(`The first reading is only ${fmt(Ts[0]-Tair,1)} °F above air; it must exceed ${fmt(R.minStartAboveAirSigma*sigma,1)} °F (${R.minStartAboveAirSigma}× the thermometer uncertainty) or there is nothing to cool.`); }
+  if (drop < R.minDropSigma*sigma){ out.reasons.push(`Total cooling is ${fmt(drop,1)} °F, below ${fmt(R.minDropSigma*sigma,1)} °F (${R.minDropSigma}× the thermometer uncertainty): the signal is not resolved from instrument error.`); }
+  let maxRise = 0; for (let i=1;i<n;i++) maxRise = Math.max(maxRise, Ts[i]-Ts[i-1]);
+  if (maxRise > R.maxRiseSigma*sigma){ out.reasons.push(`Temperature rises by ${fmt(maxRise,1)} °F between consecutive readings (limit ${fmt(R.maxRiseSigma*sigma,1)} °F): the surface is not cooling monotonically, so shade or conditions changed during the run.`); inconsistent = true; }
+  out.maxRise = maxRise;
+  const fit = withUncertainty(fitFixedAsymptote(ts, Ts, Tair), sigma, 1);
+  out.fit = fit;
+  if (!fit){ out.reasons.push("The fit failed numerically."); out.kind = "inconsistent"; return out; }
+  const free = n >= 5 ? withUncertainty(fitFreeAsymptote(ts, Ts), sigma, 2, 0) : null; out.free = free;
+  const mean = Ts.reduce((a,b)=>a+b,0)/n, sst = Ts.reduce((a,b)=>a+(b-mean)*(b-mean),0);
+  fit.r2 = sst > 0 ? 1 - fit.sse/sst : NaN;
+  fit.window = span;
+  if (fit.atBound){ out.reasons.push(`The fitted time constant runs off the searched range (${R.gridMin}–${R.gridMax} min): the readings look like a straight line or a step, not an exponential curve.`); inconsistent = true; }
+  else if (fit.tau < R.tauMin || fit.tau > R.tauMax){ out.reasons.push(`Fitted τ = ${fmt(fit.tau,1)} min is outside the plausible ${R.tauMin}–${R.tauMax} min for pavement.`); inconsistent = true; }
+  if (fit.rmse > R.maxRmseSigma*sigma){ out.reasons.push(`The curve misses the readings by RMSE ${fmt(fit.rmse,2)} °F, more than the thermometer uncertainty (${fmt(sigma,1)} °F): the data are not described by cooling toward air temperature.`); inconsistent = true; }
+  else if (fit.rmse > R.warnRmseSigma*sigma) out.warnings.push(`Misfit RMSE ${fmt(fit.rmse,2)} °F is close to the thermometer uncertainty.`);
+  if (Number.isFinite(fit.relSE)){
+    if (fit.relSE > R.maxRelSE) out.reasons.push(`τ is uncertain by ±${fmt(100*fit.relSE,0)} % (limit ±${fmt(100*R.maxRelSE,0)} %). The ${fmt(span,0)}-minute window is too short compared with τ ≈ ${fmt(fit.tau,0)} min; extend the run or use a faster-cooling spot.`);
+    else if (fit.relSE > R.warnRelSE) out.warnings.push(`τ is uncertain by ±${fmt(100*fit.relSE,0)} %.`);
+  }
+  if (!fit.atBound && span/fit.tau < R.warnWindowOverTau) out.warnings.push(`The window (${fmt(span,0)} min) covers only ${fmt(100*span/fit.tau,0)} % of one time constant; treat τ as indicative.`);
+  if (free && !free.atBound && Number.isFinite(free.seTinf)){
+    const dev = Math.abs(free.Tinf - Tair), lim = Math.max(R.maxAsymptoteSigma*sigma, 3*free.seTinf);
+    if (dev > lim){
+      out.reasons.push(`With the asymptote left free, the readings settle near ${fmt(free.Tinf,1)} °F, ${fmt(dev,1)} °F from the air temperature you entered (limit ${fmt(lim,1)} °F). The pavement is not relaxing toward that air temperature, so a τ fitted on that assumption would be wrong. Measure air in the shade at pavement height, or accept that the model’s assumption fails at this site.`);
+      inconsistent = true;
+    } else if (dev > R.warnAsymptoteSigma*sigma && dev > 2*free.seTinf){
+      out.warnings.push(`With the asymptote left free the curve settles near ${fmt(free.Tinf,1)} °F, ${fmt(dev,1)} °F from the air temperature you entered; check where the air temperature was measured.`);
+    }
+  }
+  out.kind = out.reasons.length ? (inconsistent ? "inconsistent" : "insufficient") : "ok";
+  out.verdict = out.reasons.length ? "REFUSE" : "ACCEPT";
+  return out;
+}
+// the simulation’s own integrator, anchored at the first measured reading, as a predicted cooling curve
+function simCurve(T0, Tamb, times, P){
+  let T = T0, prev = times.length ? times[0] : 0; const Q = Object.assign({}, P, {ambient:Tamb});
+  return times.map(t=>{ T = stepTemperature(T, 0, 0, t-prev, Q); prev = t; return T; });
+}
+function curveError(pred, meas, times){
+  const e = []; for (let i=1;i<times.length;i++) e.push(pred[i]-meas[i]);   // the first reading is the anchor, not a prediction
+  if (!e.length) return {rmse:NaN, mae:NaN, bias:NaN, n:0};
+  return {rmse:Math.sqrt(e.reduce((a,b)=>a+b*b,0)/e.length), mae:e.reduce((a,b)=>a+Math.abs(b),0)/e.length, bias:e.reduce((a,b)=>a+b,0)/e.length, n:e.length};
+}
+/*@@PURE-END*/
+
+/* ====================== PHYSICS CHECK ====================== */
+const PROBE_STEP = 0.02;                                    // m
+const PHYS_TOL = {absM:0.10, rel:0.01, dirDeg:1.0, sunAlt:0.6, sunAz:1.0, azMaxAlt:75, refAlt:0.5, refAz:1.0};
+
+function probeTree(spec, sun){
+  const row = {label:spec.label, h:spec.h, alt:sun.altitude, selected:!!spec.selected};
+  row.Lth = sun.altitude > 0 ? spec.h/Math.tan(sun.altitude*RAD) : Infinity;
+  const tree = {id:"probe", kind:"tree", x:60, y:36, diameter:spec.d, height:spec.h, density:spec.dens};
+  const shapes = computeShapesAt(sun.altitude, sun.azimuth, {elements:[tree], buildings:false});
+  if (!shapes.length){
+    row.simulated = false; row.result = "NOT SIMULATED";
+    row.reason = sun.altitude <= SUN_FLOOR_DEG ? `sun is at or below the model’s ${SUN_FLOOR_DEG}° floor` : "no shadow was produced";
+    return row;
+  }
+  row.simulated = true;
+  const ux = -Math.sin(sun.azimuth*RAD), uy = Math.cos(sun.azimuth*RAD);   // away from the sun; plan x = east, plan y = south
+  const r = spec.d/2, maxS = Math.min(Math.max(row.Lth,0) + r + 3, MAX_SHADOW_M + r + 10);
+  let far = -1;
+  for (let s=0; s<=maxS; s+=PROBE_STEP) if (transmittanceAt(tree.x+ux*s, tree.y+uy*s, shapes) < 0.9999) far = s;
+  row.Lsim = far - r;
+  row.dL = row.Lsim - row.Lth;
+  row.dPct = 100*row.dL/row.Lth;
+  row.tol = Math.max(PHYS_TOL.absM, PHYS_TOL.rel*row.Lth);
+  row.pass = Math.abs(row.dL) <= row.tol;
+  row.result = row.pass ? "PASS" : "FAIL";
+  row.capped = !row.pass && row.Lth > MAX_SHADOW_M;
+  // direction: circle of radius L around the trunk, compass angles that are shaded
+  const rho = Math.max(row.Lsim, 0); let sx = 0, sy = 0, cnt = 0, total = 0;
+  if (rho > r*1.05){
+    for (let a=0; a<360; a+=0.25){
+      total++;
+      const px = tree.x + rho*Math.sin(a*RAD), py = tree.y - rho*Math.cos(a*RAD);   // compass angle a: east = sin, north = −y
+      if (transmittanceAt(px, py, shapes) < 0.9999){ sx += Math.sin(a*RAD); sy += Math.cos(a*RAD); cnt++; }
+    }
+    if (cnt > 0 && cnt/total < 0.5){
+      const simAz = ((Math.atan2(sx, sy)*DEG)+360)%360, expAz = (sun.azimuth+180)%360;
+      row.dir = {sim:simAz, exp:expAz, diff:angDiff(simAz, expAz)};
+      row.dir.pass = Math.abs(row.dir.diff) <= PHYS_TOL.dirDeg;
+    }
+  }
+  if (!row.dir) row.dir = {undefined:true};
+  return row;
+}
+
+function readPhysicsInputs(){
+  const dateStr = $("phDate").value || state.dateStr;
+  const clock = parseClock($("phTime").value);
+  const heights = ($("phHeights").value||"").split(/[,\s;]+/).map(Number).filter(h=>Number.isFinite(h) && h>=0.5 && h<=60).slice(0,10);
+  return {dateStr, clock, heights, treeId:$("phTree").value};
+}
+function runPhysicsCheck(inp){
+  const p = parseDateStr(inp.dateStr);
+  if (!p || inp.clock === null) return {valid:false, message:"Enter a valid date and a local clock time."};
+  const off = austinUtcOffset(p.y, p.m, p.d, inp.clock);
+  const intl = intlOffsetCheck(p.y, p.m, p.d, inp.clock);
+  const sun = solarFromUtc(clockToUtcMs(inp.dateStr, inp.clock));
+  const sp = solarSpencer(inp.dateStr, inp.clock, off);
+  const lg = legacySolarPosition(inp.dateStr, inp.clock);
+  const cross = {dAlt: sp.altitude - sun.altitude, dAz: angDiff(sp.azimuth, sun.azimuth)};
+  cross.altPass = Math.abs(cross.dAlt) <= PHYS_TOL.sunAlt;
+  cross.azChecked = sun.altitude < PHYS_TOL.azMaxAlt;
+  cross.azPass = !cross.azChecked || Math.abs(cross.dAz) <= PHYS_TOL.sunAz;
+  cross.pass = cross.altPass && cross.azPass;
+  const specs = [];
+  const sel = state.elements.find(e=>e.id === inp.treeId && e.kind === "tree");
+  if (sel) specs.push({label:sel.name, h:sel.height, d:sel.diameter, dens:sel.density, selected:true});
+  inp.heights.forEach(h=>specs.push({label:"Test tree", h, d:sel ? sel.diameter : 6, dens:sel ? sel.density : 0.5}));
+  const rows = specs.map(s=>probeTree(s, sun));
+  const simulated = rows.filter(r=>r.simulated);
+  const dirRow = simulated.find(r=>r.dir && !r.dir.undefined);
+  const allPass = rows.length > 0 && rows.every(r=>r.pass) && cross.pass && (!dirRow || dirRow.dir.pass);
+  const anyFail = rows.some(r=>r.simulated && !r.pass) || !cross.pass || (dirRow && !dirRow.dir.pass);
+  return {valid:true, y:p.y, m:p.m, d:p.d, clock:inp.clock, off, zone:zoneLabel(off), intl, sun, sp, lg, cross, rows, dirRow, allPass, anyFail,
+          nSim:simulated.length, nPass:rows.filter(r=>r.pass).length, utcMs:clockToUtcMs(inp.dateStr, inp.clock)};
+}
+
+const phState = {last:null, selSig:"", lastSelectedId:null};
+function refreshTreeSelect(){
+  const trees = state.elements.filter(e=>e.kind === "tree");
+  const sig = trees.map(t=>t.id+":"+t.name).join("|");
+  if (sig === phState.selSig) return;
+  const keep = $("phTree").value; phState.selSig = sig;
+  $("phTree").innerHTML = '<option value="">— test heights only —</option>' + trees.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}${t.locked?" (fixed)":""}</option>`).join("");
+  if (trees.some(t=>t.id === keep)) $("phTree").value = keep;
+}
+function renderPhysics(){
+  refreshTreeSelect();
+  const sel = state.elements.find(e=>e.id === state.selectedId && e.kind === "tree");
+  if (state.selectedId !== phState.lastSelectedId){ phState.lastSelectedId = state.selectedId; if (sel) $("phTree").value = sel.id; }
+  const res = runPhysicsCheck(readPhysicsInputs());
+  phState.last = res;
+  if (!$("tab-physics").hidden) paintPhysics(res);
+  renderStatus();
+}
+function paintPhysics(res){
+  $("phTolText").textContent = `${PHYS_TOL.sunAlt}° altitude and ${PHYS_TOL.sunAz}° azimuth (azimuth is only compared below ${PHYS_TOL.azMaxAlt}° altitude, where it is well-defined)`;
+  if (!res.valid){ $("phTimeInfo").textContent = res.message; $("phSun").innerHTML = ""; $("phRows").innerHTML = ""; $("phDir").textContent = ""; $("phSummary").innerHTML = ""; $("phLegacy").innerHTML = ""; $("phRef").textContent = ""; return; }
+  const agree = res.intl === null ? "browser time-zone database unavailable for a second opinion" : (res.intl === res.off ? "browser time-zone database agrees" : `<b style="color:var(--red)">browser time-zone database says UTC${res.intl}: disagreement</b>`);
+  $("phTimeInfo").innerHTML = `${fmtClock(res.clock)} ${res.zone} (UTC${res.off}) on ${res.y}-${pad2(res.m)}-${pad2(res.d)} = ${new Date(res.utcMs).toISOString().slice(0,16).replace("T"," ")} UTC · ${agree}.`;
+  const s = res.sun, x = res.cross;
+  $("phSun").innerHTML = `<dl class="kv">
+      <dt>Primary (Almanac, from UTC instant)</dt><dd>altitude ${fmt(s.altitude,2)}° · azimuth ${fmt(s.azimuth,2)}°</dd>
+      <dt>Cross-check (NOAA/Spencer series)</dt><dd>altitude ${fmt(res.sp.altitude,2)}° · azimuth ${fmt(res.sp.azimuth,2)}°</dd>
+      <dt>Difference</dt><dd>Δalt ${x.dAlt>=0?"+":""}${fmt(x.dAlt,2)}° · Δaz ${x.dAz>=0?"+":""}${fmt(x.dAz,2)}°${x.azChecked?"":" (azimuth not compared: sun too high)"}</dd>
+      <dt>Agreement</dt><dd class="${x.pass?"pass":"fail"}" style="font-weight:600; color:var(${x.pass?"--green-ok":"--red"});">${x.pass?"PASS":"FAIL"}</dd>
+    </dl>`;
+  const pass = Number.isFinite(parseFloat($("phRefAlt").value)) || Number.isFinite(parseFloat($("phRefAz").value));
+  if (pass){
+    const ra = parseFloat($("phRefAlt").value), rz = parseFloat($("phRefAz").value), bits = [];
+    let ok = true;
+    if (Number.isFinite(ra)){ const d = s.altitude - ra; const g = Math.abs(d) <= PHYS_TOL.refAlt; ok = ok && g; bits.push(`altitude Δ ${d>=0?"+":""}${fmt(d,2)}° (${g?"within":"outside"} ±${PHYS_TOL.refAlt}°)`); }
+    if (Number.isFinite(rz)){ const d = angDiff(s.azimuth, rz); const g = Math.abs(d) <= PHYS_TOL.refAz; ok = ok && g; bits.push(`azimuth Δ ${d>=0?"+":""}${fmt(d,2)}° (${g?"within":"outside"} ±${PHYS_TOL.refAz}°)`); }
+    $("phRef").innerHTML = `<b style="color:var(${ok?"--green-ok":"--red"});">${ok?"MATCHES":"DOES NOT MATCH"} external reference:</b> ${bits.join(" · ")}. NOAA reports refracted elevation; the difference is negligible above ~10°.`;
+  } else $("phRef").textContent = "";
+  $("phRows").innerHTML = res.rows.length ? res.rows.map(r=>{
+    if (!r.simulated) return `<tr><td>${esc(r.label)}${r.selected?" ★":""}</td><td class="num">${fmt(r.h,1)}</td><td class="num">${fmt(r.alt,1)}</td><td class="num">${Number.isFinite(r.Lth)?fmt(r.Lth,2):"—"}</td><td class="num" colspan="4">${esc(r.reason)}</td><td class="na">NOT SIMULATED</td></tr>`;
+    return `<tr><td>${esc(r.label)}${r.selected?" ★":""}</td><td class="num">${fmt(r.h,1)}</td><td class="num">${fmt(r.alt,1)}</td><td class="num">${fmt(r.Lth,2)}</td><td class="num">${fmt(r.Lsim,2)}</td><td class="num">${r.dL>=0?"+":""}${fmt(r.dL,3)}</td><td class="num">${r.dPct>=0?"+":""}${fmt(r.dPct,2)}</td><td class="num">±${fmt(r.tol,2)}</td><td class="${r.pass?"pass":"fail"}">${r.result}${r.capped?` <span style="font-weight:400">· model caps shadows at ${MAX_SHADOW_M} m</span>`:""}</td></tr>`;
+  }).join("") : `<tr class="empty-row"><td colspan="9">Enter at least one height, or choose a tree.</td></tr>`;
+  const d = res.dirRow;
+  $("phDir").innerHTML = d ? `Shadow direction (${esc(d.label)}): expected azimuth ${fmt(d.dir.exp,1)}° (sun ${fmt(res.sun.azimuth,1)}° + 180°), simulated ${fmt(d.dir.sim,1)}°, Δ ${d.dir.diff>=0?"+":""}${fmt(d.dir.diff,2)}° — <b style="color:var(${d.dir.pass?"--green-ok":"--red"});">${d.dir.pass?"PASS":"FAIL"}</b> (tolerance ±${PHYS_TOL.dirDeg}°).` : "Shadow direction could not be tested: the sun is too high for the shadow to extend beyond the crown, or no shadow is drawn.";
+  let kind = "warn", title = "NO SHADOW TO CHECK", body = "At this time the model draws no tree shadow (sun at or below its floor), so the geometry could not be tested.";
+  if (res.nSim > 0){
+    kind = res.allPass ? "ok" : "bad";
+    title = res.allPass ? "MATHEMATICAL CHECK: PASS" : "MATHEMATICAL CHECK: FAIL";
+    body = `${res.nPass} of ${res.rows.length} tree rows within tolerance${res.cross.pass ? "" : "; the two sun algorithms disagree"}. This verifies shadow geometry only — it says nothing about whether predicted pavement temperatures are right.`;
+  }
+  $("phSummary").innerHTML = `<div class="callout ${kind}"><span class="ct">${title}</span>${body}</div>`;
+  const h0 = res.rows.length ? res.rows[0].h : 9, lgAlt = res.lg.altitude, lgL = lgAlt>0 ? h0/Math.tan(lgAlt*RAD) : NaN, trueL = res.sun.altitude>0 ? h0/Math.tan(res.sun.altitude*RAD) : NaN;
+  const legacyNote = res.off === -6 ? "On this date Austin is on CST (UTC−6), so the original fixed offset was right; only the sun-series error applies." : "On this date Austin is on CDT (UTC−5): the original fixed UTC−6 treated every clock time as one hour later than it really was.";
+  $("phLegacy").innerHTML = `Original code at ${fmtClock(res.clock)} ${res.zone}: altitude ${fmt(lgAlt,2)}°, azimuth ${fmt(res.lg.azimuth,2)}° (corrected: ${fmt(res.sun.altitude,2)}°, ${fmt(res.sun.azimuth,2)}°). Error ${lgAlt-res.sun.altitude>=0?"+":""}${fmt(lgAlt-res.sun.altitude,2)}° altitude, ${angDiff(res.lg.azimuth,res.sun.azimuth)>=0?"+":""}${fmt(angDiff(res.lg.azimuth,res.sun.azimuth),2)}° azimuth. For a ${fmt(h0,1)} m tree that is a shadow of ${fmt(lgL,2)} m instead of ${fmt(trueL,2)} m (${fmt(100*(lgL-trueL)/trueL,0)} %). ${legacyNote}<br>Other corrections in this build: day-of-year no longer depends on the viewer’s browser time zone; the sun series was replaced by an instant-based algorithm (the series is off by up to ~0.4° at the 2026 equinoxes, shown by the cross-check above); heating scales with sin(altitude); neighbour diffusion no longer reads half-updated cells; the 12:00 starting state no longer contains a phantom 10-minute step.`;
+}
+
+/* ====================== FIELD MEASUREMENTS ====================== */
+let fieldData = Store.load(STORE_KEYS.field, []); if (!Array.isArray(fieldData)) fieldData = [];
+function saveField(){ const ok = Store.save(STORE_KEYS.field, fieldData); $("fStorageNote").textContent = ok ? "Stored in this browser (localStorage). It survives a refresh but is not shared between browsers or devices, and clearing site data erases it. Export a CSV to keep a permanent copy." : "Browser storage is unavailable here, so measurements are kept in memory only and will be lost on refresh. Export a CSV to keep them."; }
+function sunForRecord(r){ const p = parseDateStr(r.date), c = parseClock(r.time); if (!p || c === null) return null; return solarPosition(r.date, c); }
+function sortedField(){ return fieldData.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)); }
+function renderField(){
+  const rows = sortedField();
+  $("fCount").textContent = rows.length ? `(${rows.length})` : "";
+  $("fBody").innerHTML = rows.length ? rows.map(r=>{
+    const sun = sunForRecord(r);
+    let chk = "—";
+    if (sun && r.object_height_m !== null && r.shadow_length_m !== null){
+      if (sun.altitude > 1){ const L = r.object_height_m/Math.tan(sun.altitude*RAD), d = r.shadow_length_m - L; chk = `meas ${fmt(r.shadow_length_m,2)} m vs ${fmt(L,2)} m (${d>=0?"+":""}${fmt(100*d/L,1)} %)`; }
+      else chk = "sun too low";
+    }
+    return `<tr><td>${esc(r.date)}</td><td>${esc(r.time)}</td><td>${esc(r.point_id)}</td><td>${esc(r.surface)}</td><td>${esc(r.condition)}</td><td class="num">${fmt(r.surface_temp_f,1)}</td><td class="num">${r.air_temp_f===null?"—":fmt(r.air_temp_f,1)}</td><td class="num">${sun?fmt(sun.altitude,1):"—"}</td><td>${chk}</td><td><button class="mini-x" data-del="${esc(r.id)}" aria-label="Delete measurement">✕</button></td></tr>`;
+  }).join("") : `<tr class="empty-row"><td colspan="10">No measurements yet. Nothing is pre-loaded: every row here will be one you entered or uploaded.</td></tr>`;
+  saveFieldNoteOnly();
+}
+function saveFieldNoteOnly(){ if (!$("fStorageNote").textContent) $("fStorageNote").textContent = Store.persistent ? "Stored in this browser (localStorage). Export a CSV to keep a permanent copy." : "Browser storage is unavailable here: data is kept in memory only."; }
+function fieldMsg(text, isErr){ const el = $("fMsg"); el.textContent = text; el.className = "g-msg " + (isErr ? "err" : "okmsg"); }
+$("fAdd").addEventListener("click", ()=>{
+  const raw = {date:$("fDate").value, time:$("fTime").value, point_id:$("fPoint").value, surface:$("fSurface").value, condition:$("fCond").value,
+               surface_temp_f:$("fTemp").value, air_temp_f:$("fAir").value, notes:$("fNotes").value, object_height_m:$("fObjH").value, shadow_length_m:$("fShadowL").value};
+  const v = validateMeasurement(raw);
+  if (!v.ok){ fieldMsg("Not added: " + v.errors.join("; ") + ".", true); return; }
+  if (fieldData.some(r=>dupKey(r) === dupKey(v.record))){ fieldMsg("Not added: a measurement with the same date, time, point and condition already exists.", true); return; }
+  fieldData.push(v.record); saveField(); renderField();
+  fieldMsg(`Added ${v.record.point_id} at ${v.record.time}.`, false);
+  $("fTemp").value = ""; $("fAir").value = ""; $("fNotes").value = ""; $("fObjH").value = ""; $("fShadowL").value = ""; $("fTime").value = ""; $("fTemp").focus();
+});
+$("fBody").addEventListener("click", ev=>{
+  const b = ev.target.closest("[data-del]"); if (!b) return;
+  fieldData = fieldData.filter(r=>r.id !== b.dataset.del); saveField(); renderField();
+});
+function armedButton(btn, label, action){
+  let timer = null;
+  btn.addEventListener("click", ()=>{
+    if (btn.classList.contains("armed")){ clearTimeout(timer); btn.classList.remove("armed"); btn.textContent = label; action(); return; }
+    btn.classList.add("armed"); btn.textContent = "CLICK AGAIN TO CONFIRM";
+    timer = setTimeout(()=>{ btn.classList.remove("armed"); btn.textContent = label; }, 4000);
+  });
+}
+armedButton($("fClear"), "DELETE ALL", ()=>{ fieldData = []; saveField(); renderField(); $("fImportMsg").textContent = "All stored field measurements were deleted."; });
+$("fExport").addEventListener("click", ()=>{
+  if (!fieldData.length){ $("fImportMsg").textContent = "Nothing to export yet."; return; }
+  const head = FIELD_COLS.concat(["utc_offset_h","model_sun_altitude_deg","model_sun_azimuth_deg"]);
+  const textCols = new Set(["point_id","surface","condition","notes","date","time"]);
+  const lines = [head.join(",")].concat(sortedField().map(r=>{
+    const sun = sunForRecord(r), p = parseDateStr(r.date), c = parseClock(r.time);
+    const extra = {utc_offset_h:p ? austinUtcOffset(p.y,p.m,p.d,c) : "", model_sun_altitude_deg:sun?sun.altitude.toFixed(2):"", model_sun_azimuth_deg:sun?sun.azimuth.toFixed(2):""};
+    return head.map(h=>csvCell(h in extra ? extra[h] : r[h], textCols.has(h))).join(",");
+  }));
+  saveFile("4pm-street-field-measurements.csv", lines.join("\n")+"\n", "text/csv", m=>{ $("fImportMsg").textContent = m; });
+});
+$("fTemplate").addEventListener("click", ()=>{
+  const t = [
+    "# 4PM Street field measurement template. Lines starting with # are ignored on upload.",
+    "# date = YYYY-MM-DD   time = local Austin clock HH:MM (24 h)   surface = asphalt|concrete|brick|stone|other   condition = sun|shade|partial",
+    "# surface_temp_f is required. air_temp_f is optional. object_height_m and shadow_length_m are optional but must be given together.",
+    "# Add one row per real reading below the header. The app never fills in values for you.",
+    FIELD_COLS.join(",")
+  ].join("\n") + "\n";
+  saveFile("4pm-street-field-template.csv", t, "text/csv", m=>{ $("fImportMsg").textContent = m; });
+});
+$("fUploadBtn").addEventListener("click", ()=>$("fUpload").click());
+$("fUpload").addEventListener("change", ev=>{
+  const f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if (!f) return;
+  if (f.size > 2*1024*1024){ $("fImportMsg").textContent = "That file is larger than 2 MB; not imported."; return; }
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    const rows = parseCSV(rd.result);
+    if (rows.length < 2){ $("fImportMsg").textContent = "No data rows found. The file needs a header row and at least one reading."; return; }
+    const idx = mapHeaders(rows[0]), missing = FIELD_REQUIRED.filter(c=>!(c in idx));
+    if (missing.length){ $("fImportMsg").textContent = "Missing required column(s): " + missing.join(", ") + ". Download the template to see the exact headers."; return; }
+    let added = 0; const problems = []; const keys = new Set(fieldData.map(dupKey));
+    rows.slice(1).forEach((cells, i)=>{
+      const raw = {}; FIELD_COLS.forEach(c=>{ raw[c] = c in idx ? (cells[idx[c]] ?? "") : ""; });
+      const v = validateMeasurement(raw);
+      if (!v.ok){ problems.push(`row ${i+2}: ${v.errors.join("; ")}`); return; }
+      const k = dupKey(v.record); if (keys.has(k)){ problems.push(`row ${i+2}: duplicate of an existing measurement`); return; }
+      keys.add(k); fieldData.push(v.record); added++;
+    });
+    saveField(); renderField();
+    $("fImportMsg").innerHTML = `Imported <b>${added}</b> measurement${added===1?"":"s"}; skipped <b>${problems.length}</b>.` + (problems.length ? "<br>" + problems.slice(0,8).map(esc).join("<br>") + (problems.length>8 ? `<br>… and ${problems.length-8} more.` : "") : "");
+  };
+  rd.readAsText(f);
+});
+
+/* ====================== COOLING CURVE ====================== */
+let coolSessions = Store.load(STORE_KEYS.cooling, []); if (!Array.isArray(coolSessions)) coolSessions = [];
+const cool = {draft:null, assessment:null};
+function emptyDraft(){
+  return {id:null, date:todayStr(), pointId:"", surface:"asphalt", airTemp:"", sigma:"2", notes:"",
+          readings:[0,5,10,15,20,25].map(t=>({t:String(t), T:""}))};
+}
+function todayStr(){ const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function buildReadingsGrid(){
+  const g = $("cGrid");
+  g.innerHTML = '<span class="rh"></span><span class="rh">Minutes after shade</span><span class="rh">Surface °F</span>' +
+    cool.draft.readings.map((r,i)=>`<span>${i+1}</span><input type="number" step="0.5" min="0" class="g-input" data-ri="${i}" data-rk="t" value="${esc(r.t)}" aria-label="Minutes, reading ${i+1}"><input type="number" step="0.1" class="g-input" data-ri="${i}" data-rk="T" value="${esc(r.T)}" aria-label="Surface temperature °F, reading ${i+1}">`).join("");
+}
+function syncDraftToForm(){
+  const d = cool.draft;
+  $("cDate").value = d.date; $("cPoint").value = d.pointId; $("cSurface").value = d.surface; $("cAir").value = d.airTemp; $("cSigma").value = d.sigma; $("cNotes").value = d.notes;
+  buildReadingsGrid();
+}
+function readDraftFromForm(){
+  const d = cool.draft;
+  d.date = $("cDate").value; d.pointId = $("cPoint").value; d.surface = $("cSurface").value; d.airTemp = $("cAir").value; d.sigma = $("cSigma").value; d.notes = $("cNotes").value;
+  document.querySelectorAll("#cGrid input").forEach(inp=>{ d.readings[+inp.dataset.ri][inp.dataset.rk] = inp.value; });
+}
+function cmsg(text, isErr){ const el = $("cMsg"); el.textContent = text; el.className = "g-msg " + (isErr ? "err" : "okmsg"); }
+function refreshSavedSelect(keep){
+  $("cSaved").innerHTML = '<option value="">— saved sessions —</option>' + coolSessions.map(s=>{
+    const n = s.readings.filter(r=>String(r.T).trim()!=="").length;
+    return `<option value="${esc(s.id)}">${esc(s.date)} · ${esc(s.pointId||"(no point)")} · ${n} readings</option>`;
+  }).join("");
+  if (keep) $("cSaved").value = keep;
+}
+
+// calibration record
+let calibration = Store.load(STORE_KEYS.cal, null);
+if (calibration && !(Number.isFinite(calibration.tau) && calibration.tau > 0)) calibration = null;
+function calibrationActive(){
+  if (!calibration) return false;
+  return Math.abs(tauMinutes(state.thermal) - calibration.tau)/calibration.tau < 0.01;
+}
+function syncCoolingSlider(){
+  $("setCooling").value = Math.min(6, state.thermal.coolingRate);
+  $("valCool").textContent = Number(state.thermal.coolingRate.toFixed(3));
+  $("setCap").value = state.thermal.heatCapacity; $("valCap").textContent = state.thermal.heatCapacity;
+}
+if (calibration){ state.thermal.coolingRate = 60*state.thermal.heatCapacity/calibration.tau; }
+
+function layoutSignature(){ return JSON.stringify([state.elements.map(e=>[e.id,e.x,e.y,e.w,e.d,e.diameter,e.height,e.density]), state.dateStr, state.thermal, state.threshold]); }
+const effectMemo = {};
+function hotGapUnder(thermalOverride){
+  const key = layoutSignature() + JSON.stringify(thermalOverride||{});
+  if (effectMemo[key]) return effectMemo[key];
+  const saved = state.thermal; state.thermal = Object.assign({}, saved, thermalOverride||{});
+  recomputeTo(300); const r = evaluate(false);
+  state.thermal = saved; recomputeTo(state.timeMinutes);
+  const out = {longestHotGap:r.longestHotGap, peakTemp:r.peakTemp, coolPct:r.coolPct, hotTotal:r.hotGapTotal};
+  if (Object.keys(effectMemo).length > 40) for (const k in effectMemo) delete effectMemo[k];
+  effectMemo[key] = out; return out;
+}
+
+function chartSvg(a, draft){
+  const W = 560, H = 270, ml = 46, mr = 14, mt = 14, mb = 36;
+  const pts = a.pts, Tair = numOrNull(draft.airTemp), sigma = numOrNull(draft.sigma);
+  const ok = pts.length > 0;
+  const tMax = Math.max(30, ok ? pts[pts.length-1].t*1.08 : 30);
+  const showSim = pts.length >= 2 && Number.isFinite(Tair);
+  const t0 = ok ? pts[0].t : 0, T0 = ok ? pts[0].T : NaN;
+  const simFn = k=>(t=>Tair + (T0-Tair)*Math.exp(-(k/state.thermal.heatCapacity)*Math.max(0,t-t0)/60));
+  const fitFn = (a.verdict === "ACCEPT" && a.fit) ? (t=>a.fit.Tinf + a.fit.A*Math.exp(-t/a.fit.tau)) : null;
+  const vals = pts.map(p=>p.T);
+  if (Number.isFinite(Tair)) vals.push(Tair);
+  if (fitFn) vals.push(fitFn(0), fitFn(tMax));
+  const sg = Number.isFinite(sigma) ? sigma : 2;
+  let yMin = vals.length ? Math.min(...vals) - sg - 2 : 70, yMax = vals.length ? Math.max(...vals) + sg + 2 : 130;
+  if (yMax - yMin < 10){ yMax += 5; yMin -= 5; }
+  const X = t=>ml + (t/tMax)*(W-ml-mr), Y = T=>mt + (1-(T-yMin)/(yMax-yMin))*(H-mt-mb);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Measured pavement cooling curve with fitted and simulated curves" xmlns="http://www.w3.org/2000/svg" style="font-family:ui-sans-serif,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;">`;
+  const yStep = (yMax-yMin) > 40 ? 10 : (yMax-yMin) > 20 ? 5 : 2;
+  for (let T=Math.ceil(yMin/yStep)*yStep; T<=yMax; T+=yStep){ s += `<line x1="${ml}" x2="${W-mr}" y1="${Y(T)}" y2="${Y(T)}" style="stroke:var(--g200)"/><text x="${ml-6}" y="${Y(T)+3}" text-anchor="end" font-size="9.5" style="fill:var(--g700)">${T}</text>`; }
+  const xStep = tMax > 60 ? 10 : 5;
+  for (let t=0; t<=tMax; t+=xStep){ s += `<line x1="${X(t)}" x2="${X(t)}" y1="${mt}" y2="${H-mb}" style="stroke:var(--g200)"/><text x="${X(t)}" y="${H-mb+13}" text-anchor="middle" font-size="9.5" style="fill:var(--g700)">${t}</text>`; }
+  s += `<line x1="${ml}" x2="${ml}" y1="${mt}" y2="${H-mb}" style="stroke:var(--line)"/><line x1="${ml}" x2="${W-mr}" y1="${H-mb}" y2="${H-mb}" style="stroke:var(--line)"/>`;
+  s += `<text x="${(ml+W-mr)/2}" y="${H-5}" text-anchor="middle" font-size="10" style="fill:var(--g700)">minutes after shade arrives</text><text transform="translate(11 ${(mt+H-mb)/2}) rotate(-90)" text-anchor="middle" font-size="10" style="fill:var(--g700)">surface temperature °F</text>`;
+  if (Number.isFinite(Tair)) s += `<line x1="${ml}" x2="${W-mr}" y1="${Y(Tair)}" y2="${Y(Tair)}" stroke-dasharray="2 3" style="stroke:var(--g500)"/><text x="${W-mr-2}" y="${Y(Tair)-4}" text-anchor="end" font-size="9.5" style="fill:var(--g500)">air ${fmt(Tair,1)}°F</text>`;
+  const curveLine = (fn, style, dash)=>{ let d = ""; for (let i=0;i<=120;i++){ const t = tMax*i/120; d += (i?"L":"M") + X(t).toFixed(1) + " " + Y(fn(t)).toFixed(1); } return `<path d="${d}" fill="none" stroke-width="1.8" ${dash?`stroke-dasharray="${dash}"`:""} style="${style}"/>`; };
+  if (showSim){ s += curveLine(simFn(DEFAULT_THERMAL.coolingRate), "stroke:var(--g500)", "2 4"); s += curveLine(simFn(state.thermal.coolingRate), "stroke:#e0781f", "6 4"); }
+  if (fitFn) s += curveLine(fitFn, "stroke:var(--accent)", "");
+  pts.forEach(p=>{
+    if (Number.isFinite(sigma)) s += `<line x1="${X(p.t)}" x2="${X(p.t)}" y1="${Y(p.T+sigma)}" y2="${Y(p.T-sigma)}" style="stroke:var(--ink)" stroke-width="1"/><line x1="${X(p.t)-3}" x2="${X(p.t)+3}" y1="${Y(p.T+sigma)}" y2="${Y(p.T+sigma)}" style="stroke:var(--ink)"/><line x1="${X(p.t)-3}" x2="${X(p.t)+3}" y1="${Y(p.T-sigma)}" y2="${Y(p.T-sigma)}" style="stroke:var(--ink)"/>`;
+    s += `<circle cx="${X(p.t)}" cy="${Y(p.T)}" r="3.6" style="fill:var(--paper);stroke:var(--ink)" stroke-width="1.6"/>`;
+  });
+  if (!ok) s += `<text x="${(ml+W-mr)/2}" y="${(mt+H-mb)/2}" text-anchor="middle" font-size="11" style="fill:var(--g500)">Enter readings to plot the measured curve.</text>`;
+  return s + "</svg>";
+}
+
+function renderCooling(){
+  const d = cool.draft;
+  const a = assessCooling({readings:d.readings, airTemp:d.airTemp, sigma:d.sigma});
+  cool.assessment = a;
+  const nPts = a.pts.length, sigma = numOrNull(d.sigma), Tair = numOrNull(d.airTemp);
+  $("cChart").innerHTML = chartSvg(a, d);
+  $("cLegend").innerHTML = `<span><i style="border-color:var(--ink)"></i>measured ± thermometer uncertainty</span>` +
+    (a.verdict==="ACCEPT" ? `<span><i style="border-color:var(--accent)"></i>fitted curve</span>` : "") +
+    ((nPts >= 2 && Number.isFinite(Tair)) ? `<span><i style="border-color:#e0781f;border-top-style:dashed"></i>simulation now, from the first reading (τ ${fmt(tauMinutes(state.thermal),0)} min)</span><span><i style="border-color:var(--g500);border-top-style:dotted"></i>original default (τ ${fmt(60*state.thermal.heatCapacity/DEFAULT_THERMAL.coolingRate,0)} min)</span>` : "");
+  // loop stepper
+  const applied = calibration && calibrationActive() && a.verdict === "ACCEPT" && Math.abs(calibration.tau - a.fit.tau)/a.fit.tau < 0.005;
+  const steps = [
+    {k:"1 · INPUT", cls:nPts ? "done" : "", t: nPts ? `${nPts} reading${nPts===1?"":"s"} entered` : "enter readings"},
+    {k:"2 · CHECK", cls:a.fit ? "done" : "", t: a.fit ? `fit run: τ ${fmt(a.fit.tau,1)} min` : "fit needs valid data"},
+    {k:"3 · VERDICT", cls:a.verdict === "ACCEPT" ? "done" : (nPts ? "fail" : ""), t: a.verdict === "ACCEPT" ? "calibration accepted" : (nPts ? "calibration refused" : "pending")},
+    {k:"4 · REVISE", cls:applied ? "done" : "", t: applied ? "applied; simulation re-run" : "apply, then re-run"}
+  ];
+  $("cLoop").innerHTML = steps.map(s=>`<div class="step ${s.cls}"><b>${s.k}</b>${esc(s.t)}</div>`).join("");
+  // verdict
+  const R = COOL_RULES;
+  if (a.verdict === "ACCEPT"){
+    $("cVerdict").innerHTML = `<div class="callout ok"><span class="ct">FIT ACCEPTED — calibration may be applied</span>The readings pass every rule below. This tells you the <b>cooling time constant at this spot on this day</b>; it does not validate the simulation’s temperature predictions.${a.warnings.length ? `<ul>${a.warnings.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>` : ""}</div>`;
+  } else {
+    const label = a.kind === "inconsistent" ? "DATA INCONSISTENT — calibration refused" : "INSUFFICIENT DATA — calibration refused";
+    $("cVerdict").innerHTML = `<div class="callout ${a.kind==="inconsistent"?"bad":"warn"}"><span class="ct">${label}</span><ul>${a.reasons.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>${a.warnings.length ? `<ul>${a.warnings.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>` : ""}</div>`;
+  }
+  // equation + stats
+  if (a.fit && a.verdict === "ACCEPT"){
+    const f = a.fit;
+    $("cEquation").innerHTML = `<div class="eqn">T(t) = ${fmt(f.Tinf,1)} + ${fmt(f.A,1)} · e<sup>−t / ${fmt(f.tau,1)} min</sup></div><p class="g-note small">T in °F, t in minutes after shade arrives. ${fmt(f.Tinf,1)} °F is the air temperature you entered.</p>`;
+    $("cStats").innerHTML = `<dl class="kv">
+      <dt>Time constant τ</dt><dd>${fmt(f.tau,1)} min ± ${fmt(f.seTau,1)} (${fmt(100*f.relSE,0)} %)</dd>
+      <dt>Half-life τ·ln 2</dt><dd>${fmt(f.halfLife,1)} min</dd>
+      <dt>Fit residual (RMSE)</dt><dd>${fmt(f.rmse,2)} °F (thermometer ±${fmt(sigma,1)} °F) · R² ${fmt(f.r2,3)}</dd>
+      <dt>Window / τ</dt><dd>${fmt(f.window,0)} min / ${fmt(f.tau,0)} min = ${fmt(f.window/f.tau,2)}</dd>
+      <dt>Free-asymptote check</dt><dd>${a.free && !a.free.atBound ? `T∞ ${fmt(a.free.Tinf,1)} °F, τ ${fmt(a.free.tau,1)} min (diagnostic only; 3 parameters from ${a.pts.length} points)` : "not resolved"}</dd>
+    </dl>`;
+  } else { $("cEquation").innerHTML = ""; $("cStats").innerHTML = ""; }
+  // comparison with the simulation (anchored at the first measured reading)
+  if (nPts >= 3 && Number.isFinite(Tair)){
+    const ts = a.pts.map(p=>p.t), Ts = a.pts.map(p=>p.T), P = state.thermal;
+    const rows = [
+      {n:"Original default (k = " + DEFAULT_THERMAL.coolingRate + ")", tau:60*P.heatCapacity/DEFAULT_THERMAL.coolingRate},
+      {n:"Simulation now (k = " + Number(P.coolingRate.toFixed(3)) + ")", tau:tauMinutes(P)}
+    ];
+    if (a.verdict === "ACCEPT") rows.push({n:"Fitted to these readings", tau:a.fit.tau});
+    const body = rows.map(r=>{ const curve = simCurve(Ts[0], Tair, ts, Object.assign({}, P, {coolingRate:60*P.heatCapacity/r.tau})); const e = curveError(curve, Ts, ts); return `<tr><td>${esc(r.n)}</td><td class="num">${fmt(r.tau,1)}</td><td class="num">${fmt(r.tau*Math.LN2,1)}</td><td class="num">${fmt(e.mae,2)}</td><td class="num">${fmt(e.rmse,2)}</td><td class="num">${e.bias>=0?"+":""}${fmt(e.bias,2)}</td></tr>`; }).join("");
+    $("cCompare").innerHTML = `<div class="tbl-wrap" style="max-height:none;"><table><thead><tr><th>Simulation prediction from the first reading</th><th class="num">τ (min)</th><th class="num">Half-life</th><th class="num">MAE °F</th><th class="num">RMSE °F</th><th class="num">Bias °F</th></tr></thead><tbody>${body}</tbody></table></div><p class="g-note small">Error = predicted − measured over the later readings. These are <b>in-sample</b>: the fitted row was tuned on the same readings, so it will look good by construction. Real validation needs measurements the fit never saw (blind test, Stage 2).</p>`;
+  } else $("cCompare").innerHTML = "";
+  $("cApply").disabled = a.verdict !== "ACCEPT";
+  // active calibration box
+  if (calibration){
+    const act = calibrationActive();
+    let effect = "";
+    if (act){
+      const dflt = hotGapUnder({coolingRate:DEFAULT_THERMAL.coolingRate}), cur = hotGapUnder({});
+      effect = `<br><b>Effect on the current layout (${esc(state.dateStr)}, 5:00 PM):</b> default τ → longest hot gap ${fmt(dflt.longestHotGap,0)} m, peak ${fmt(dflt.peakTemp,1)} °F; calibrated τ → ${fmt(cur.longestHotGap,0)} m, peak ${fmt(cur.peakTemp,1)} °F. This is a model comparison, not a measurement.`;
+    }
+    $("cActive").innerHTML = `<div class="callout ${act?"ok":"warn"}"><span class="ct">${act?"ACTIVE CALIBRATION":"CALIBRATION INACTIVE — parameters edited since"}</span>τ = ${fmt(calibration.tau,1)} min ± ${fmt(calibration.tauSE,1)} (half-life ${fmt(calibration.tau*Math.LN2,1)} min) from ${esc(calibration.pointId||"unnamed point")}, ${esc(calibration.date)}, ${esc(calibration.surface)}, air ${fmt(calibration.airTemp,0)} °F, surface ${fmt(calibration.Tmin,0)}–${fmt(calibration.Tmax,0)} °F, n = ${calibration.n}. Default cooling rate was ${DEFAULT_THERMAL.coolingRate}; now ${Number(state.thermal.coolingRate.toFixed(3))}.${effect}</div>`;
+  } else $("cActive").innerHTML = `<p class="g-note small">No calibration applied. The simulation is using its original default cooling rate (${DEFAULT_THERMAL.coolingRate}, τ ≈ ${fmt(60*state.thermal.heatCapacity/DEFAULT_THERMAL.coolingRate,0)} min), an assumption, not a measurement.</p>`;
+  renderStatus();
+}
+function paintCoolRules(){
+  const R = COOL_RULES;
+  $("cRules").innerHTML = [
+    `<b>Model:</b> T(t) = T<sub>air</sub> + A·e<sup>−t/τ</sup> — a single lumped surface layer relaxing toward air temperature once shaded (Newtonian cooling). The simulation uses exactly this law, with τ = 60·C/k minutes, so a fitted τ maps directly onto its Cooling Rate k.`,
+    `<b>Fit:</b> least squares on τ and A with the asymptote fixed at the air temperature you entered; τ is searched between ${R.gridMin} and ${R.gridMax} min. Uncertainty comes from the fit’s covariance, with the thermometer ±σ treated as a ≈95 % bound (s.d. ≈ σ/2).`,
+    `<b>Assumptions:</b> uniform pavement, constant air temperature and wind during the run, no direct sun on the spot after t = 0, thermometer error that is random and not a drifting bias, and shade that really arrived at t = 0.`,
+    `<b>Refused when:</b> fewer than ${R.minPoints} valid readings; span under ${R.minSpanMin} min; air temperature missing; the first reading is under ${R.minStartAboveAirSigma}σ above air; total cooling under ${R.minDropSigma}σ; any rise between readings above ${R.maxRiseSigma}σ; τ at the edge of the searched range or outside ${R.tauMin}–${R.tauMax} min; misfit RMSE above ${R.maxRmseSigma}σ; τ uncertainty above ±${100*R.maxRelSE}%; the free-asymptote fit settling more than ${R.maxAsymptoteSigma}σ (or 3 standard errors) away from the air temperature you entered.`,
+    `<b>Not claimed:</b> a good fit does not validate the simulation. It fixes one number, the cooling speed, for one surface on one day. Surface temperature is not human thermal comfort.`
+  ].map(t=>`<li>${t}</li>`).join("");
+}
+
+function applyCalibration(){
+  const a = cool.assessment, d = cool.draft;
+  if (!a || a.verdict !== "ACCEPT") return;
+  const f = a.fit, Ts = a.pts.map(p=>p.T);
+  calibration = {tau:f.tau, tauSE:f.seTau, k:60*state.thermal.heatCapacity/f.tau, C:state.thermal.heatCapacity, rmse:f.rmse, n:a.pts.length,
+                 airTemp:numOrNull(d.airTemp), Tmin:Math.min(...Ts), Tmax:Math.max(...Ts), surface:d.surface, pointId:d.pointId, date:d.date,
+                 appliedAt:new Date().toISOString(), defaultK:DEFAULT_THERMAL.coolingRate, readings:a.pts.map(p=>({t:p.t, T:p.T}))};
+  state.thermal.coolingRate = calibration.k;
+  Store.save(STORE_KEYS.cal, calibration);
+  syncCoolingSlider(); cmsg(`Applied: τ = ${fmt(f.tau,1)} min, cooling rate k = ${Number(calibration.k.toFixed(3))} (default ${DEFAULT_THERMAL.coolingRate}). The simulation has been re-run.`, false);
+  updateAll(); renderCooling();
+}
+function revertCalibration(){
+  state.thermal.coolingRate = DEFAULT_THERMAL.coolingRate; calibration = null; Store.save(STORE_KEYS.cal, null);
+  syncCoolingSlider(); cmsg("Reverted to the original default cooling rate.", false); updateAll(); renderCooling();
+}
+$("cApply").addEventListener("click", applyCalibration);
+$("cRevert").addEventListener("click", revertCalibration);
+$("tab-cooling").addEventListener("input", ev=>{ if (ev.target.closest("#cSaved")) return; if (ev.target.type === "file") return; readDraftFromForm(); renderCooling(); });
+$("cAddRow").addEventListener("click", ()=>{
+  readDraftFromForm(); const last = cool.draft.readings[cool.draft.readings.length-1];
+  const nt = (numOrNull(last && last.t) ?? 0) + 5;
+  if (cool.draft.readings.length >= 30){ cmsg("30 rows is the limit.", true); return; }
+  cool.draft.readings.push({t:String(Number.isFinite(nt)?nt:0), T:""}); buildReadingsGrid(); renderCooling();
+});
+$("cRemoveRow").addEventListener("click", ()=>{ readDraftFromForm(); if (cool.draft.readings.length > 1) cool.draft.readings.pop(); buildReadingsGrid(); renderCooling(); });
+$("cNew").addEventListener("click", ()=>{ cool.draft = emptyDraft(); syncDraftToForm(); refreshSavedSelect(""); cmsg("New empty session.", false); renderCooling(); });
+$("cSave").addEventListener("click", ()=>{
+  readDraftFromForm(); const d = cool.draft;
+  if (!parseDateStr(d.date)){ cmsg("Enter a valid date before saving.", true); return; }
+  if (!String(d.pointId).trim()){ cmsg("Enter a point ID before saving.", true); return; }
+  if (!d.readings.some(r=>String(r.T).trim() !== "")){ cmsg("Enter at least one temperature before saving.", true); return; }
+  if (!d.id) d.id = newId("c");
+  const snap = JSON.parse(JSON.stringify(d)); const i = coolSessions.findIndex(s=>s.id === d.id);
+  if (i >= 0) coolSessions[i] = snap; else coolSessions.push(snap);
+  const ok = Store.save(STORE_KEYS.cooling, coolSessions); refreshSavedSelect(d.id);
+  cmsg(ok ? "Session saved in this browser." : "Saved in memory only: browser storage is unavailable, so it will be lost on refresh.", !ok);
+});
+$("cLoad").addEventListener("click", ()=>{
+  const s = coolSessions.find(x=>x.id === $("cSaved").value); if (!s){ cmsg("Choose a saved session first.", true); return; }
+  cool.draft = JSON.parse(JSON.stringify(s)); syncDraftToForm(); cmsg("Session loaded.", false); renderCooling();
+});
+armedButton($("cDelete"), "DELETE", ()=>{
+  const id = $("cSaved").value; if (!id){ cmsg("Choose a saved session first.", true); return; }
+  coolSessions = coolSessions.filter(s=>s.id !== id); Store.save(STORE_KEYS.cooling, coolSessions); refreshSavedSelect("");
+  if (cool.draft.id === id) cool.draft.id = null; cmsg("Session deleted.", false);
+});
+$("cCsvBtn").addEventListener("click", ()=>$("cCsv").click());
+$("cCsv").addEventListener("change", ev=>{
+  const f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    const rows = parseCSV(rd.result); if (rows.length < 2){ cmsg("No data rows found.", true); return; }
+    const h = rows[0].map(normHeader), ti = h.findIndex(x=>["minutes","minute","t","time_min","minutes_after_shade"].includes(x)), vi = h.findIndex(x=>["surface_temp_f","temp_f","surface_f","temperature_f"].includes(x));
+    if (ti < 0 || vi < 0){ cmsg("The CSV needs columns named minutes and surface_temp_f.", true); return; }
+    const rs = rows.slice(1).filter(r=>String(r[ti]??"").trim() !== "" || String(r[vi]??"").trim() !== "").slice(0,30).map(r=>({t:String(r[ti]).trim(), T:String(r[vi]).trim()}));
+    if (!rs.length){ cmsg("No readings found in the CSV.", true); return; }
+    readDraftFromForm(); cool.draft.readings = rs; buildReadingsGrid(); cmsg(`Loaded ${rs.length} readings from the CSV.`, false); renderCooling();
+  };
+  rd.readAsText(f);
+});
+
+/* ====================== STATUS CHIPS ====================== */
+function setChip(id, cls, label, text, title){
+  const el = $(id); el.className = "chip " + cls; el.innerHTML = `<b>${esc(label)}</b>${text ? " · " + esc(text) : ""}`; el.title = title || "";
+}
+function renderStatus(){
+  const ph = phState.last;
+  if (!ph || !ph.valid) setChip("chipMath", "warn", "MATH CHECK NOT RUN", "", "Enter a date and time in the Physics Check tab.");
+  else if (ph.nSim === 0) setChip("chipMath", "warn", "MATH CHECK NOT SIMULATED", "sun too low", "No tree shadow is drawn at this time.");
+  else if (ph.allPass) setChip("chipMath", "ok", "SHADOW MATH PASS", `${ph.nPass}/${ph.rows.length} rows`, "Geometry only. Says nothing about temperature accuracy.");
+  else setChip("chipMath", "bad", "SHADOW MATH FAIL", `${ph.nPass}/${ph.rows.length} rows`, "The shadow geometry disagrees with L = h / tan α or the two sun algorithms disagree.");
+  const a = cool.assessment;
+  if (calibration && calibrationActive()){
+    const P = state.thermal, outAir = Math.abs(P.ambient - calibration.airTemp) > 10;
+    const r = state.lastResult;
+    const outSurf = r ? (r.peakTemp > calibration.Tmax + 5) : false;
+    const why = []; if (outAir) why.push(`sim air ${fmt(P.ambient,0)} °F vs calibrated at ${fmt(calibration.airTemp,0)} °F`); if (outSurf) why.push(`sim peak ${fmt(r.peakTemp,0)} °F is above the ${fmt(calibration.Tmax,0)} °F the cooling curve covered`);
+    const scope = `cooling time constant only; ${calibration.surface}, air ${fmt(calibration.airTemp,0)} °F, surface ${fmt(calibration.Tmin,0)}–${fmt(calibration.Tmax,0)} °F, ${calibration.date}`;
+    if (why.length) setChip("chipThermal", "warn", "OUTSIDE CALIBRATED RANGE", why.join("; "), scope);
+    else setChip("chipThermal", "ok", "FIELD-CALIBRATED", `τ ${fmt(calibration.tau,0)} min`, scope);
+  } else if (a && a.pts && a.pts.length && a.verdict === "REFUSE" && a.kind === "insufficient") {
+    setChip("chipThermal", "warn", "INSUFFICIENT DATA", "cooling fit refused", "The cooling-curve readings do not yet support a calibration.");
+  } else setChip("chipThermal", "warn", "UNCALIBRATED", calibration ? "τ edited since calibration" : "default parameters are assumptions", "Thermal parameters are adjustable assumptions until field data are applied.");
+  setChip("chipValid", "warn", "TEMPERATURE PREDICTIONS NOT VALIDATED", "", "No blind prediction test has been run yet. Calibration is not validation.");
+}
+
+/* ====================== TABS + WIRING ====================== */
+$("gTabs").addEventListener("click", ev=>{
+  const b = ev.target.closest("button"); if (!b) return;
+  document.querySelectorAll("#gTabs .toggle-btn").forEach(x=>x.classList.toggle("active", x === b));
+  ["physics","field","cooling"].forEach(t=>{ $("tab-"+t).hidden = (t !== b.dataset.tab); });
+  if (b.dataset.tab === "physics") paintPhysics(phState.last || runPhysicsCheck(readPhysicsInputs()));
+  if (b.dataset.tab === "cooling") renderCooling();
+  if (b.dataset.tab === "field") renderField();
+  renderStatus();
+});
+["phDate","phTime","phTree","phHeights","phRefAlt","phRefAz"].forEach(id=>$(id).addEventListener("input", renderPhysics));
+$("phTree").addEventListener("change", renderPhysics);
+
+let groundingQueued = false;
+function scheduleGrounding(){
+  if (groundingQueued) return; groundingQueued = true;
+  requestAnimationFrame(()=>{
+    groundingQueued = false;
+    renderPhysics();
+    const tau = tauMinutes(state.thermal);
+    $("tauReadout").textContent = `Time constant τ = 60·C/k = ${fmt(tau,0)} min (half-life ${fmt(tau*Math.LN2,0)} min). Original default: ${fmt(60*state.thermal.heatCapacity/DEFAULT_THERMAL.coolingRate,0)} min.${calibration ? (calibrationActive() ? " Field-calibrated." : " Calibration inactive: edited.") : ""}`;
+    if (!$("tab-cooling").hidden) renderCooling();
+  });
+}
+
+
+/* ====================== INIT ====================== */
+initElements();
+buildGrid();
+buildRouteSamples();
+syncAuthorButtons();
+$("phDate").value = state.dateStr;
+$("customDate").value = state.dateStr;
+$("fDate").value = todayStr();
+cool.draft = emptyDraft(); syncDraftToForm(); refreshSavedSelect(""); paintCoolRules();
+syncCoolingSlider(); renderField();
+updateAll();
+renderPhysics();
+
+// small inspection hook for debugging and automated testing; not used by the page itself
+window.FOURPM_DEBUG = {state, solarPosition, solarSpencer, legacySolarPosition, austinUtcOffset, intlOffsetCheck, runPhysicsCheck, readPhysicsInputs,
+  assessCooling, fitFixedAsymptote, fitFreeAsymptote, simCurve, curveError, parseCSV, validateMeasurement, recomputeTo, evaluate, hotGapUnder,
+  stepTemperature, tauMinutes, computeShapesAt, transmittanceAt, getField:()=>fieldData, getCalibration:()=>calibration, DEFAULT_THERMAL, COOL_RULES};
+
+})();
+</script>
+
+</body></html>
